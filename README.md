@@ -1,4 +1,4 @@
-# Pocket Party — Godot Android Project
+# Pocket Party — Godot Mobile Game
 
 An offline-first, same-device 1–4 player mini-game collection prototype built with Godot 4.
 
@@ -22,7 +22,8 @@ To run the separate web prototype in a browser, download the [source ZIP](https:
 4. Press **F6** to run the main scene or **F5** to run the project.
 
 ## Current prototype
-- Arcade-style home screen with six original mini-game concepts.
+- Separate party setup home screen and mini-game selection menu.
+- Six original mini-games, including a 2D racing track with hold-to-accelerate controls, nitro boosts, and moving cars.
 - 1–4 player selection and tournament length selection.
 - Quick play and tournament flow.
 - Round scores, tournament points, final winner screen.
@@ -30,7 +31,7 @@ To run the separate web prototype in a browser, download the [source ZIP](https:
 - Original vector icon and code-drawn interface/game visuals.
 
 ## Important status
-This is a development prototype, not a store-ready release. The source has been uploaded to GitHub, but it has not yet been verified through an actual Godot runtime in this workspace. Test import and gameplay in the editor and on physical devices before relying on it.
+This is a development prototype, not a store-ready release. Recent gameplay/UI improvements have been committed to GitHub. The updated Godot project still needs import/runtime verification in the Godot editor and playtesting on devices. Test import and gameplay in the editor and on physical devices before relying on it.
 
 Not integrated yet: live ads, Google Play Billing/VIP purchase, production sound, final signed Android App Bundle, Play Console release setup, and complete device QA.
 
