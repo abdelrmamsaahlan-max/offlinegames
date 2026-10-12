@@ -95,7 +95,6 @@ func _rr(rect: Rect2, color: Color, radius := 18) -> void:
 	var box := StyleBoxFlat.new()
 	box.bg_color = color
 	box.set_corner_radius_all(radius)
-	add_theme_stylebox_override("panel", box)
 	draw_style_box(box, rect)
 
 func _txt(value: String, x: float, y: float, size: int, color: Color = INK, width := -1.0) -> void:
@@ -648,7 +647,7 @@ func _raw_scores() -> Array[float]:
 		scores.append(value)
 	return scores
 
-func _award_points(scores: Array[float]) -> void:
+func _award_points(scores: Array) -> void:
 	result_points.clear()
 	for p in range(player_count):
 		var rank := 0
@@ -674,7 +673,7 @@ func _show_final() -> void:
 	last_winner = "PLAYER %d WINS!" % (order[0] + 1) if not order.is_empty() else "CHAMPION!"
 	queue_redraw()
 
-func _sorted_players(scores: Array[float]) -> Array[int]:
+func _sorted_players(scores: Array) -> Array[int]:
 	var order: Array[int] = []
 	for p in range(scores.size()):
 		order.append(p)
