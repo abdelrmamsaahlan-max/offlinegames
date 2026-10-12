@@ -107,7 +107,7 @@
           '<span class="eyebrow"><span class="star">✦</span> THE LIVING ROOM ARCADE</span>' +
           '<h1>One phone.<br><span>Four players.</span><br>Big chaos.</h1>' +
           '<p>Pick your players, choose your challenge, and fight for the crown. Six mini-games, real-time action, and zero Wi-Fi required.</p>' +
-          '<div class="hero-bottom"><div class="hero-stat"><strong>06</strong><small>Mini games</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>1–4</strong><small>Players</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>0</strong><small>Wi-Fi required</small></div></div>' +
+          '<div class="hero-bottom"><div class="hero-stat"><strong>08</strong><small>Mini games</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>1–4</strong><small>Players</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>0</strong><small>Wi-Fi required</small></div></div>' +
         '</div>' +
         '<div class="settings-card">' +
           '<div class="section-heading"><div><h2>Build your party</h2><p>Pass one device around or crowd around the screen.</p></div><span class="step-mark">STEP 01 / 02</span></div>' +
