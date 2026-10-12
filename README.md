@@ -2,20 +2,23 @@
 
 An offline-first, same-device 1–4 player mini-game collection prototype built with Godot 4.
 
-## Open it online (no local Godot install needed for a prototype test)
-1. Download this repository as a ZIP: [Download source ZIP](https://github.com/abdelrmamsaahlan-max/offlinegames/archive/refs/heads/main.zip).
-2. Open the official [Godot Web Editor](https://editor.godotengine.org/releases/4.7.stable/godot.editor.html) in a desktop Chromium-based browser.
-3. In **Preload project ZIP**, select the ZIP downloaded in step 1.
-4. Click **Start Godot editor**.
-5. When the Project Manager appears, create a project folder under the suggested projects location and choose **Install & Edit**.
-6. Press **F5** to run the game. Switch between the **Editor** and **Game** tabs when it starts.
+## Native mobile app (primary target)
 
-The web editor is experimental and intended for learning/prototyping; it does not support exporting an Android APK/AAB. For an Android release, use the desktop Godot editor and Android export templates/SDK.
+**Pocket Party is intended to be a real Godot mobile app for Google Play and the Apple App Store.** The browser build in `index.html`, `game.js`, and `styles.css` is only an optional preview; it is not the store app.
+
+- **Godot project:** open `project.godot` in the Godot 4 editor. The native game's scene is `main.tscn` and its gameplay/UI code is `scripts/main.gd`.
+- **Android / Google Play:** install Godot export templates, OpenJDK 17, and the Android SDK; configure the Java and Android SDK paths in Godot; create an Android export preset and test on a device. Google Play releases should be exported as a signed Android App Bundle (`.aab`). [Official Android export guide](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_android.html).
+- **iOS / App Store:** exporting and signing the iOS app requires macOS with Xcode. Godot exports an Xcode project, which is then built and signed for an iPhone/App Store release. [Official iOS export guide](https://docs.godotengine.org/en/latest/tutorials/export/exporting_for_ios.html).
+- **Release setup still needed:** final app ID/package name, store-ready launcher icons, export presets and signing, privacy/store listing details, and device testing. Do not publish the prototype until these are checked.
+
+## Optional browser preview
+
+To run the separate web prototype in a browser, download the [source ZIP](https://github.com/abdelrmamsaahlan-max/offlinegames/archive/refs/heads/main.zip) and open it in the [Godot Web Editor](https://editor.godotengine.org/releases/4.7.stable/godot.editor.html). This is useful for experimentation, but the web editor is not the path to creating the final Android App Bundle or signed iOS App Store build.
 
 ## Open locally
 1. Download this repository using **Code → Download ZIP**, or clone it.
 2. Install the standard Godot 4.x editor from https://godotengine.org/download/.
-3. In Godot Project Manager, click **Import** and select project.godot.
+3. In Godot Project Manager, click **Import** and select `project.godot`.
 4. Press **F6** to run the main scene or **F5** to run the project.
 
 ## Current prototype
