@@ -28,6 +28,7 @@
   let tournament = null;
   let toastTimer = null;
   let audioContext = null;
+  let activeBlockDrag = null;
 
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
@@ -719,7 +720,7 @@
         }).join("");
         return '<button class="block-piece-button' + (piece.used ? " used" : (game.selectedPiece === index ? " chosen" : "")) + '" data-action="block-piece" data-piece="' + index + '"' + (piece.used ? " disabled" : "") + '><span class="piece-caption">' + (piece.used ? "PLACED" : (game.selectedPiece === index ? "SELECTED" : "SHAPE " + (index + 1))) + '</span><span class="piece-preview" style="grid-template-columns:repeat(' + maxX + ',20px);grid-template-rows:repeat(' + maxY + ',20px)">' + spans + '</span></button>';
       }).join("");
-      html = '<div class="block-game-layout"><div class="block-game-intro"><span class="block-kicker">BLOCK BATTLE · PLAYER ' + (game.activePuzzlePlayer + 1) + '</span><strong>Place shapes. Clear lines. Chase the high score.</strong><span>Choose a piece, then tap a spot on the board. Full rows and columns clear together.</span></div><div class="block-game-main"><div class="block-board" role="grid" aria-label="8 by 8 block puzzle board">' + boardCells + '</div><div class="block-piece-tray">' + tray + '</div></div><div class="block-game-footer"><span id="block-score-live">SCORE ' + player.blockScore + '</span><span id="block-lines-live">' + player.blockLines + ' LINES CLEARED</span><span>PASS DEVICE AFTER YOUR TURN</span></div></div>';
+      html = '<div class="block-game-layout"><div class="block-game-intro"><span class="block-kicker">BLOCK BATTLE · PLAYER ' + (game.activePuzzlePlayer + 1) + '</span><strong>Place shapes. Clear lines. Chase the high score.</strong><span>Drag a shape onto the board, or tap a shape and then a spot. Full rows and columns clear together.</span></div><div class="block-game-main"><div class="block-board" role="grid" aria-label="8 by 8 block puzzle board">' + boardCells + '</div><div class="block-piece-tray">' + tray + '</div></div><div class="block-game-footer"><span id="block-score-live">SCORE ' + player.blockScore + '</span><span id="block-lines-live">' + player.blockLines + ' LINES CLEARED</span><span>PASS DEVICE AFTER YOUR TURN</span></div></div>';
     } else if (id === "orb_dash") {
       const orbs = game.players.map(function (p, i) { return '<span class="orb-player" id="orb-player-' + i + '" style="--orb-color:' + colors[i] + ';left:' + p.orbX + '%;top:' + p.orbY + '%"><span>' + (i + 1) + '</span></span>'; }).join("");
       html = '<div class="orb-dash-layout"><div class="orb-dash-heading"><div><span class="orb-kicker">ORBIT ARENA</span><strong>Grab the gems!</strong><small>Move with your joystick. Every gem is worth 10 points.</small></div><span class="orb-leader" id="orb-leader">P1 LEADS · 0 PTS</span></div><div class="orb-arena-field" id="orb-arena-field"><span class="orb-gem" id="orb-gem" style="left:' + game.orbTarget.x + '%;top:' + game.orbTarget.y + '%">✦</span>' + orbs + '</div><div class="orb-arena-note">Keep moving, collect the gold gem, and beat your friends to the next one.</div></div>';
@@ -818,6 +819,16 @@
   const racePointerOwners = new Map();
   const joystickPointerOwners = new Map();
   root.addEventListener("pointerdown", function (event) {
+    const puzzlePiece = event.target.closest('[data-action="block-piece"]');
+    if (puzzlePiece && root.contains(puzzlePiece) && currentScreen === "game" && game && game.id === "block_battle") {
+      const pieceIndex = Number(puzzlePiece.dataset.piece);
+      if (game.players[game.activePuzzlePlayer].blockPieces[pieceIndex] && !game.players[game.activePuzzlePlayer].blockPieces[pieceIndex].used) {
+        game.selectedPiece = pieceIndex;
+        activeBlockDrag = { pointerId: event.pointerId, pieceIndex: pieceIndex };
+        puzzlePiece.classList.add("dragging");
+      }
+      return;
+    }
     const stick = event.target.closest('[data-action="joystick"]');
     if (stick && root.contains(stick) && currentScreen === "game" && game && game.id === "orb_dash") {
       const playerIndex = Number(stick.dataset.player);
@@ -844,8 +855,21 @@
     setJoystickValue(owner.playerIndex, owner.button, event);
     event.preventDefault();
   }, { passive: false });
-  document.addEventListener("pointerup", function (event) { releaseJoystick(event.pointerId); });
-  document.addEventListener("pointercancel", function (event) { releaseJoystick(event.pointerId); });
+  document.addEventListener("pointerup", function (event) {
+    releaseJoystick(event.pointerId);
+    if (activeBlockDrag && activeBlockDrag.pointerId === event.pointerId) {
+      const cell = event.target.closest('[data-action="block-place"]');
+      if (cell && currentScreen === "game" && game && game.id === "block_battle") {
+        game.selectedPiece = activeBlockDrag.pieceIndex;
+        placeBlockPiece(Number(cell.dataset.row), Number(cell.dataset.col));
+      }
+      activeBlockDrag = null;
+    }
+  });
+  document.addEventListener("pointercancel", function (event) {
+    releaseJoystick(event.pointerId);
+    if (activeBlockDrag && activeBlockDrag.pointerId === event.pointerId) activeBlockDrag = null;
+  });
   function releaseRacePointer(event) {
     if (!racePointerOwners.has(event.pointerId)) return;
     const playerIndex = racePointerOwners.get(event.pointerId);
