@@ -17,10 +17,16 @@
     { id: "block_battle", title: "Block Battle", category: "PUZZLE", desc: "Place shapes, clear lines, and beat every score.", color: "#4d8dff", soft: "#e9f1ff", length: "35 SEC EACH" },
     { id: "orb_dash", title: "Orb Dash", category: "MOVEMENT", desc: "Steer your orb, grab gems, and dodge rivals.", color: "#7d65f2", soft: "#eeebff", length: "30 SEC" }
   ];
+  // Deliberately varied, normalized polyominoes from 1–5 cells. Pieces rotate in play.
   const BLOCK_SHAPES = [
-    [[0,0]], [[0,0],[1,0],[0,1],[1,1]], [[0,0],[1,0],[2,0]], [[0,0],[0,1],[0,2]],
-    [[0,0],[1,0],[2,0],[1,1]], [[0,0],[0,1],[1,1],[2,1]], [[0,0],[1,0],[1,1],[2,1]],
-    [[0,0],[1,0],[2,0],[3,0]], [[0,0],[0,1],[0,2],[1,2]], [[1,0],[0,1],[1,1],[2,1]]
+    [[0,0]], [[0,0],[1,0]], [[0,0],[1,0],[2,0]], [[0,0],[0,1],[1,1]],
+    [[1,0],[0,1],[1,1]], [[0,0],[1,0],[0,1],[1,1]], [[0,0],[1,0],[2,0],[3,0]],
+    [[0,0],[0,1],[0,2],[0,3]], [[0,0],[0,1],[1,1],[2,1]], [[0,0],[1,0],[2,0],[1,1]],
+    [[0,0],[1,0],[1,1],[2,1]], [[1,0],[2,0],[0,1],[1,1]], [[0,0],[0,1],[0,2],[1,2]],
+    [[1,0],[0,1],[1,1],[2,1]], [[0,0],[1,0],[2,0],[0,1],[0,2]],
+    [[0,0],[1,0],[2,0],[1,1],[1,2]], [[0,0],[1,0],[1,1],[2,1],[2,2]],
+    [[1,0],[0,1],[1,1],[1,2],[2,2]], [[0,0],[1,0],[2,0],[0,1],[1,1]],
+    [[0,0],[1,0],[2,0],[2,1],[2,2]], [[0,0],[0,1],[0,2],[1,0],[1,1]]
   ];
   let settings = { players: 2, rounds: 5, sound: true };
   let currentScreen = "home";
@@ -150,8 +156,10 @@
       taps: 0, comboBonus: 0, reaction: null, responded: false, progress: 0, raceSpeed: 0, throttle: false, boosts: 0,
       hits: 0, misses: 0, early: false, dodged: false, status: "READY",
       memoryInput: 0, memoryScore: 0, done: false, score: 0,
-      board: Array(64).fill(null), blockPieces: [], blockScore: 0, blockLines: 0,
-      orbX: 50, orbY: 50, joystickX: 0, joystickY: 0
+      board: Array(64).fill(null), blockPieces: [], blockScore: 0, blockLines: 0, blockStreak: 0,
+      blockCursor: { row: 3, col: 3 }, lastPlaced: [], lastCleared: [],
+      orbX: 50, orbY: 50, joystickX: 0, joystickY: 0, raceSteer: 0, cleanPasses: 0,
+      throttleButtonHeld: false, boostFlash: 0
     };
   }
   function spawnOrbTarget() {
@@ -165,10 +173,64 @@
     }
     return candidate;
   }
-  function makeBlockPieces() {
-    return Array.from({ length: 3 }, function () {
-      return { cells: BLOCK_SHAPES[Math.floor(Math.random() * BLOCK_SHAPES.length)].map(function (cell) { return [cell[0], cell[1]]; }), colorIndex: Math.floor(Math.random() * colors.length), used: false };
+  function normalizeBlockCells(cells) {
+    const minX = Math.min.apply(null, cells.map(function (c) { return c[0]; }));
+    const minY = Math.min.apply(null, cells.map(function (c) { return c[1]; }));
+    return cells.map(function (c) { return [c[0] - minX, c[1] - minY]; })
+      .sort(function (a, b) { return a[1] - b[1] || a[0] - b[0]; });
+  }
+  function blockShapeKey(cells) {
+    return normalizeBlockCells(cells).map(function (c) { return c[0] + ":" + c[1]; }).join("|");
+  }
+  function blockRotations(piece) {
+    const out = [];
+    let cells = piece.cells.map(function (c) { return [c[0], c[1]]; });
+    for (let i = 0; i < 4; i++) {
+      const normalized = normalizeBlockCells(cells);
+      const key = blockShapeKey(normalized);
+      if (!out.some(function (entry) { return entry.key === key; })) out.push({ cells: normalized, rotation: i, key: key });
+      cells = cells.map(function (c) { return [-c[1], c[0]]; });
+    }
+    return out;
+  }
+  function makeBlockPieces(board) {
+    const currentBoard = Array.isArray(board) ? board : Array(64).fill(null);
+    const occupied = currentBoard.filter(function (value) { return value !== null; }).length;
+    const openCells = 64 - occupied;
+    const placeableShapes = BLOCK_SHAPES.filter(function (cells) {
+      const testPiece = { cells: cells };
+      return blockRotations(testPiece).some(function (rotation) {
+        for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+          if (blockPieceFits(currentBoard, { cells: rotation.cells }, x, y)) return true;
+        }
+        return false;
+      });
     });
+    if (!placeableShapes.length) {
+      return Array.from({ length: 3 }, function () {
+        return { cells: [[0,0]], colorIndex: Math.floor(Math.random() * colors.length), used: false, rotation: 0 };
+      });
+    }
+    const targetSizes = openCells > 42 ? [3,4,5] : (openCells > 24 ? [2,3,4] : [1,2,3]);
+    const picked = [];
+    for (let slot = 0; slot < 3; slot++) {
+      let candidates = placeableShapes.filter(function (cells) {
+        const key = blockShapeKey(cells);
+        return !picked.some(function (piece) { return piece.shapeKey === key; });
+      });
+      if (!candidates.length) candidates = placeableShapes.slice();
+      const preferred = candidates.filter(function (cells) { return targetSizes.indexOf(cells.length) >= 0; });
+      if (preferred.length) candidates = preferred;
+      const shape = candidates[Math.floor(Math.random() * candidates.length)];
+      picked.push({
+        cells: normalizeBlockCells(shape),
+        shapeKey: blockShapeKey(shape),
+        colorIndex: Math.floor(Math.random() * colors.length),
+        used: false,
+        rotation: 0
+      });
+    }
+    return picked;
   }
   function blockPieceFits(board, piece, x, y) {
     return piece.cells.every(function (cell) {
@@ -179,26 +241,97 @@
   function blockPlayerHasMove(player) {
     return player.blockPieces.some(function (piece) {
       if (piece.used) return false;
-      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) if (blockPieceFits(player.board, piece, x, y)) return true;
-      return false;
+      return blockRotations(piece).some(function (rotation) {
+        for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+          if (blockPieceFits(player.board, { cells: rotation.cells }, x, y)) return true;
+        }
+        return false;
+      });
     });
   }
   function firstUsableBlockPiece(player) {
     for (let i = 0; i < player.blockPieces.length; i++) if (!player.blockPieces[i].used) return i;
     return -1;
   }
+  function findBestBlockMove(player, onlyIndex) {
+    let best = null;
+    player.blockPieces.forEach(function (piece, pieceIndex) {
+      if (piece.used || (onlyIndex !== undefined && pieceIndex !== onlyIndex)) return;
+      blockRotations(piece).forEach(function (rotation) {
+        for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+          if (!blockPieceFits(player.board, { cells: rotation.cells }, x, y)) continue;
+          const board = player.board.slice();
+          const placed = [];
+          rotation.cells.forEach(function (cell) {
+            const index = (y + cell[1]) * 8 + x + cell[0];
+            board[index] = piece.colorIndex;
+            placed.push(index);
+          });
+          let rows = 0, cols = 0, adjacency = 0;
+          for (let row = 0; row < 8; row++) if (board.slice(row * 8, row * 8 + 8).every(function (v) { return v !== null; })) rows++;
+          for (let col = 0; col < 8; col++) {
+            let full = true;
+            for (let row = 0; row < 8; row++) if (board[row * 8 + col] === null) full = false;
+            if (full) cols++;
+          }
+          placed.forEach(function (index) {
+            const row = Math.floor(index / 8), col = index % 8;
+            [[row-1,col],[row+1,col],[row,col-1],[row,col+1]].forEach(function (pos) {
+              if (pos[0] >= 0 && pos[0] < 8 && pos[1] >= 0 && pos[1] < 8 && player.board[pos[0] * 8 + pos[1]] !== null) adjacency++;
+            });
+          });
+          const lines = rows + cols;
+          const score = lines * 100 + Math.max(0, lines - 1) * 35 + rotation.cells.length * 2 + adjacency * 0.35 + (3 - Math.abs(3.5 - (x + 0.5))) * 0.2;
+          if (!best || score > best.score) best = { pieceIndex: pieceIndex, row: y, col: x, rotation: rotation.rotation, score: score };
+        }
+      });
+    });
+    return best;
+  }
+  function rotateSelectedBlock() {
+    if (!game || game.id !== "block_battle" || currentScreen !== "game") return;
+    const player = game.players[game.activePuzzlePlayer];
+    const piece = player.blockPieces[game.selectedPiece];
+    if (!piece || piece.used) return;
+    piece.cells = normalizeBlockCells(piece.cells.map(function (c) { return [-c[1], c[0]]; }));
+    piece.rotation = (piece.rotation + 1) % 4;
+    const move = findBestBlockMove(player, game.selectedPiece);
+    if (move) player.blockCursor = { row: move.row, col: move.col };
+    sfx("rotate");
+    renderGame();
+  }
+  function suggestBlockMove() {
+    if (!game || game.id !== "block_battle" || currentScreen !== "game") return;
+    const player = game.players[game.activePuzzlePlayer];
+    const move = findBestBlockMove(player);
+    if (!move) { toast("No legal move left on this board."); sfx("error"); return; }
+    game.selectedPiece = move.pieceIndex;
+    const piece = player.blockPieces[move.pieceIndex];
+    if (piece) {
+      for (let r = 0; r < move.rotation; r++) piece.cells = normalizeBlockCells(piece.cells.map(function (c) { return [-c[1], c[0]]; }));
+      piece.rotation = move.rotation;
+    }
+    player.blockCursor = { row: move.row, col: move.col };
+    player.status = move.score >= 100 ? "SMART MOVE · LINE CLEAR!" : "SMART MOVE READY";
+    sfx("hint");
+    renderGame();
+    toast(move.score >= 100 ? "Best move found: line clear!" : "Best legal placement highlighted.");
+  }
   function advanceBlockTurn() {
     if (!game || currentScreen !== "game" || game.id !== "block_battle") return;
     const next = game.activePuzzlePlayer + 1;
     if (next >= game.players.length) { finishRound(); return; }
     game.activePuzzlePlayer = next;
-    game.selectedPiece = firstUsableBlockPiece(game.players[next]);
+    const player = game.players[next];
+    game.selectedPiece = firstUsableBlockPiece(player);
     game.timeLeft = game.duration;
-    game.players[next].status = "YOUR TURN — MAKE IT COUNT!";
-    if (!blockPlayerHasMove(game.players[next])) {
-      game.players[next].status = "NO MOVES LEFT";
-      game.timeLeft = 0.01;
+    player.status = "YOUR TURN — MAKE IT COUNT!";
+    if (!blockPlayerHasMove(player)) {
+      player.blockPieces = makeBlockPieces(player.board);
+      game.selectedPiece = firstUsableBlockPiece(player);
+      player.status = blockPlayerHasMove(player) ? "FRESH SHAPES! YOUR TURN" : "NO LEGAL MOVES";
     }
+    if (!blockPlayerHasMove(player)) game.timeLeft = 0.01;
     renderGame();
   }
   function placeBlockPiece(row, col) {
@@ -206,43 +339,93 @@
     const player = game.players[game.activePuzzlePlayer];
     const pieceIndex = game.selectedPiece;
     const piece = player.blockPieces[pieceIndex];
-    if (!piece || piece.used) { toast("Choose a shape first."); return; }
-    if (!blockPieceFits(player.board, piece, col, row)) { toast("That shape doesn't fit there."); beep(170, 0.04, "triangle"); return; }
-    piece.cells.forEach(function (cell) { player.board[(row + cell[1]) * 8 + col + cell[0]] = piece.colorIndex; });
+    if (!piece || piece.used) { toast("Choose an unused shape first."); sfx("error"); return; }
+    if (!blockPieceFits(player.board, piece, col, row)) {
+      toast("That shape doesn't fit. Rotate it or use Smart Move.");
+      sfx("error");
+      return;
+    }
+    player.blockCursor = { row: row, col: col };
+    player.lastPlaced = [];
+    player.lastCleared = [];
+    piece.cells.forEach(function (cell) {
+      const index = (row + cell[1]) * 8 + col + cell[0];
+      player.board[index] = piece.colorIndex;
+      player.lastPlaced.push(index);
+    });
     player.blockScore += piece.cells.length;
     piece.used = true;
     const fullRows = [], fullCols = [];
     for (let y = 0; y < 8; y++) if (player.board.slice(y * 8, y * 8 + 8).every(function (v) { return v !== null; })) fullRows.push(y);
-    for (let x = 0; x < 8; x++) if (Array.from({ length: 8 }, function (_, y) { return player.board[y * 8 + x]; }).every(function (v) { return v !== null; })) fullCols.push(x);
+    for (let x = 0; x < 8; x++) {
+      let full = true;
+      for (let y = 0; y < 8; y++) if (player.board[y * 8 + x] === null) full = false;
+      if (full) fullCols.push(x);
+    }
     if (fullRows.length || fullCols.length) {
       const cleared = new Set();
       fullRows.forEach(function (y) { for (let x = 0; x < 8; x++) cleared.add(y * 8 + x); });
       fullCols.forEach(function (x) { for (let y = 0; y < 8; y++) cleared.add(y * 8 + x); });
-      cleared.forEach(function (i) { player.board[i] = null; });
+      player.lastCleared = Array.from(cleared);
+      cleared.forEach(function (index) { player.board[index] = null; });
       const lineCount = fullRows.length + fullCols.length;
       player.blockLines += lineCount;
-      player.blockScore += lineCount * 10 + Math.max(0, lineCount - 1) * 5;
-      player.status = lineCount > 1 ? "COMBO! +" + (lineCount * 10 + (lineCount - 1) * 5) : "LINE CLEAR! +10";
-      beep(650 + lineCount * 90, 0.1, "triangle");
+      player.blockStreak++;
+      const bonus = lineCount * 10 + Math.max(0, lineCount - 1) * 8 + Math.max(0, player.blockStreak - 1) * 3;
+      player.blockScore += bonus;
+      player.status = lineCount > 1 ? "MEGA CLEAR x" + lineCount + " · +" + bonus : "LINE CLEAR! +" + bonus;
+      sfx(lineCount > 1 ? "combo" : "clear");
     } else {
+      player.blockStreak = 0;
       player.status = "+" + piece.cells.length + " BLOCKS";
-      beep(430, 0.045, "sine");
+      sfx("place");
     }
     if (player.blockPieces.every(function (p) { return p.used; })) {
-      player.blockPieces = makeBlockPieces();
-      game.selectedPiece = 0;
+      player.blockPieces = makeBlockPieces(player.board);
+      game.selectedPiece = firstUsableBlockPiece(player);
     } else {
       game.selectedPiece = firstUsableBlockPiece(player);
     }
     if (!blockPlayerHasMove(player)) {
-      player.status = "BOARD FULL — TURN OVER";
-      renderGame();
-      advanceBlockTurn();
-      return;
+      player.blockPieces = makeBlockPieces(player.board);
+      game.selectedPiece = firstUsableBlockPiece(player);
+      if (!blockPlayerHasMove(player)) {
+        player.status = "BOARD FULL — TURN OVER";
+        game.timeLeft = 0.01;
+        renderGame();
+        return;
+      }
+      player.status = "NEW SHAPES — KEEP GOING!";
     }
     renderGame();
   }
-  function updateOrbArena() {
+  function updateBlockGhostAtCell(cell) {
+    if (!game || game.id !== "block_battle" || currentScreen !== "game") return;
+    const boardElement = root.querySelector(".block-board");
+    if (!boardElement) return;
+    boardElement.querySelectorAll(".block-cell").forEach(function (el) {
+      el.classList.remove("ghost-valid", "ghost-invalid", "cursor-anchor");
+    });
+    if (!cell || !boardElement.contains(cell)) return;
+    const player = game.players[game.activePuzzlePlayer];
+    const row = Number(cell.dataset.row), col = Number(cell.dataset.col);
+    player.blockCursor = { row: row, col: col };
+    const piece = player.blockPieces[game.selectedPiece];
+    if (!piece || piece.used) return;
+    const fits = blockPieceFits(player.board, piece, col, row);
+    piece.cells.forEach(function (shapeCell) {
+      const target = boardElement.querySelector('.block-cell[data-row="' + (row + shapeCell[1]) + '"][data-col="' + (col + shapeCell[0]) + '"]');
+      if (target) target.classList.add(fits ? "ghost-valid" : "ghost-invalid");
+    });
+    cell.classList.add("cursor-anchor");
+  }
+  function releaseBlockCursor() {
+    if (!game || game.id !== "block_battle" || currentScreen !== "game") return;
+    const player = game.players[game.activePuzzlePlayer];
+    const cursor = player.blockCursor || { row: 3, col: 3 };
+    placeBlockPiece(cursor.row, cursor.col);
+  }
+    function updateOrbArena() {
     if (!game || game.id !== "orb_dash") return;
     game.players.forEach(function (p, i) {
       const orb = document.getElementById("orb-player-" + i);
@@ -307,16 +490,28 @@
       startedAt: performance.now(), target: Math.floor(Math.random() * 4), targetCooldown: 0.65,
       sequence: Array.from({ length: settings.players >= 3 ? 6 : 5 }, function () { return Math.floor(Math.random() * 4); }),
       showIndex: -1, memoryPlayer: 0, wave: 1, nextSoundAt: 0,
-      activePuzzlePlayer: 0, selectedPiece: 0, orbTarget: { x: 50, y: 50 }
+      activePuzzlePlayer: 0, selectedPiece: 0, orbTarget: { x: 50, y: 50 }, raceObstacles: []
     };
     game.players.forEach(function (p, i) {
-      p.blockPieces = makeBlockPieces();
+      p.blockPieces = makeBlockPieces(p.board);
       p.orbX = i % 2 === 0 ? 17 : 83;
       p.orbY = i < 2 ? 24 : 76;
     });
     if (id === "block_battle") {
+      game.players.forEach(function (p) {
+        const opening = findBestBlockMove(p);
+        if (opening) p.blockCursor = { row: opening.row, col: opening.col };
+      });
       game.players[0].status = "YOUR TURN — MAKE IT COUNT!";
       game.timeLeft = duration;
+    }
+    if (id === "mini_racers") {
+      const obstacleSteps = [118, 218, 318, 418, 518];
+      game.raceObstacles = game.players.map(function (_, playerIndex) {
+        return obstacleSteps.map(function (progress, obstacleIndex) {
+          return { progress: progress, offset: (Math.random() < 0.5 ? -1 : 1) * 0.72, passed: false, player: playerIndex, id: obstacleIndex };
+        });
+      });
     }
     if (id === "orb_dash") {
       game.orbTarget = spawnOrbTarget();
