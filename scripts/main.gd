@@ -46,6 +46,8 @@ var active_memory_player := 0
 var dodge_wave := 0
 var last_winner := ""
 var wiggle := 0.0
+var race_mouse_player := -1
+var race_touch_players: Dictionary = {}
 
 func _ready() -> void:
 	randomize()
@@ -62,15 +64,40 @@ func _process(delta: float) -> void:
 
 func _gui_input(event: InputEvent) -> void:
 	var scale_to_design := Vector2(SW, SH) / get_viewport_rect().size
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_handle_tap(event.position * scale_to_design)
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		var pos := event.position * scale_to_design
+		if event.pressed:
+			_handle_tap(pos)
+			race_mouse_player = -1
+			if screen_name == "game" and current_game == "mini_racers":
+				race_mouse_player = _race_player_at(pos)
+				if race_mouse_player >= 0:
+					player_data[race_mouse_player]["throttle"] = true
+		else:
+			if race_mouse_player >= 0 and race_mouse_player < player_data.size():
+				player_data[race_mouse_player]["throttle"] = false
+			race_mouse_player = -1
+		queue_redraw()
 		accept_event()
-	elif event is InputEventScreenTouch and event.pressed:
-		_handle_tap(event.position * scale_to_design)
+	elif event is InputEventScreenTouch:
+		var pos := event.position * scale_to_design
+		if event.pressed:
+			_handle_tap(pos)
+			if screen_name == "game" and current_game == "mini_racers":
+				var player := _race_player_at(pos)
+				if player >= 0:
+					race_touch_players[event.index] = player
+					player_data[player]["throttle"] = true
+		else:
+			if race_touch_players.has(event.index):
+				var player: int = int(race_touch_players[event.index])
+				race_touch_players.erase(event.index)
+				_sync_race_throttle(player)
+		queue_redraw()
 		accept_event()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE or event.keycode == KEY_BACK:
-			_go_home()
+			_go_to_select() if screen_name == "game" else _go_home()
 			accept_event()
 
 func _draw() -> void:
@@ -80,6 +107,7 @@ func _draw() -> void:
 	_draw_background_marks()
 	match screen_name:
 		"home": _draw_home()
+		"select": _draw_select()
 		"game": _draw_game()
 		"result": _draw_result()
 		"final": _draw_final()
@@ -118,34 +146,59 @@ func _draw_home() -> void:
 	_rr(Rect2(1050, 48, 164, 45), Color("#EDF0FF"), 16)
 	_center("OFFLINE PLAY", 1050, 76, 164, 14, PURPLE)
 
-	_rr(Rect2(38, 138, 296, 524), WHITE, 24)
-	_txt("SET UP YOUR", 58, 174, 14, MUTED)
-	_txt("PARTY", 58, 207, 30, INK)
-	_txt("HOW MANY PLAYERS?", 58, 228, 12, MUTED)
+	# Hero panel
+	_rr(Rect2(38, 138, 704, 524), Color("#4E40C9"), 28)
+	draw_circle(Vector2(682, 190), 128, Color("#FFFFFF14"))
+	draw_circle(Vector2(678, 191), 86, Color("#FFFFFF16"))
+	draw_circle(Vector2(88, 615), 110, Color("#FFFFFF10"))
+	_txt("THE LIVING ROOM ARCADE", 72, 187, 14, Color("#DCD7FF"))
+	_txt("ONE PHONE.", 68, 260, 48, WHITE)
+	_txt("FOUR PLAYERS.", 68, 319, 45, YELLOW)
+	_txt("BIG CHAOS.", 68, 378, 48, WHITE)
+	_txt("Six quick-fire mini-games. One screen.", 72, 426, 17, Color("#E3E0FF"))
+	_txt("Pick your players, choose a challenge,", 72, 454, 15, Color("#E3E0FF"))
+	_txt("and settle the score — no Wi-Fi needed.", 72, 478, 15, Color("#E3E0FF"))
+	_rr(Rect2(72, 530, 160, 76), Color("#FFFFFF18"), 17)
+	_txt("06", 91, 563, 26, YELLOW)
+	_txt("MINI-GAMES", 92, 587, 11, WHITE)
+	_rr(Rect2(245, 530, 160, 76), Color("#FFFFFF18"), 17)
+	_txt("1–4", 264, 563, 26, YELLOW)
+	_txt("PLAYERS", 265, 587, 11, WHITE)
+	_rr(Rect2(418, 530, 278, 76), Color("#FFFFFF18"), 17)
+	_txt("PASS THE PHONE", 438, 562, 16, WHITE)
+	_txt("LET THE REMATCH BEGIN", 438, 585, 10, Color("#DCD7FF"))
+
+	# Setup panel
+	_rr(Rect2(765, 138, 477, 524), WHITE, 28)
+	_txt("BUILD YOUR PARTY", 795, 184, 24, INK)
+	_txt("Choose who's playing on this device.", 795, 209, 13, MUTED)
+	_txt("HOW MANY PLAYERS?", 795, 237, 12, MUTED)
 	for i in range(4):
 		var rect := _home_player_rect(i)
 		_pill(rect, str(i + 1), player_count == i + 1, PLAYER_COLORS[i] if player_count == i + 1 else PURPLE)
-		if player_count != i + 1:
-			_center("P%d" % (i + 1), rect.position.x, rect.position.y + 70, rect.size.x, 10, MUTED)
-	_txt("TOURNAMENT LENGTH", 58, 318, 12, MUTED)
+		_center("PLAYER %d" % (i + 1), rect.position.x - 2, rect.position.y + 88, rect.size.x + 4, 9, PLAYER_COLORS[i] if player_count == i + 1 else MUTED)
+	_txt("TOURNAMENT LENGTH", 795, 360, 12, MUTED)
 	_pill(_home_round_rect(0), "5 ROUNDS", tournament_round_count == 5, PURPLE)
 	_pill(_home_round_rect(1), "10 ROUNDS", tournament_round_count == 10, PURPLE)
-	_rr(Rect2(54, 396, 264, 68), YELLOW, 20)
-	_center("START TOURNAMENT", 54, 425, 264, 17, INK)
-	_center("AUTO-SELECT GAMES", 54, 447, 264, 11, INK)
-	_rr(Rect2(54, 483, 264, 154), Color("#F4F6FD"), 18)
-	_txt("QUICK PLAY", 70, 510, 14, INK)
-	_txt("Tap any game card to jump straight in.", 70, 532, 11, MUTED)
-	_rr(Rect2(70, 551, 100, 35), Color("#E1F7FE"), 11)
-	_center("6 GAMES", 70, 574, 100, 12, Color("#1689B6"))
-	_rr(Rect2(180, 551, 122, 35), Color("#EEEAFE"), 11)
-	_center("NO WI-FI", 180, 574, 122, 12, PURPLE)
-	_center("READY, PLAYER %d?" % player_count, 54, 619, 264, 12, MUTED)
+	_rr(Rect2(795, 451, 417, 78), YELLOW, 20)
+	_center("PLAY  →", 795, 485, 417, 23, INK)
+	_center("CHOOSE A MINI-GAME NEXT", 795, 509, 417, 11, INK)
+	_txt("%d PLAYER%s READY" % [player_count, "" if player_count == 1 else "S"], 795, 562, 13, INK)
+	_txt("Quick play or a random tournament.", 795, 585, 12, MUTED)
+	_txt("SOUND CONTROLS ARE IN THE TOP BAR", 795, 622, 10, MUTED)
 
-	_txt("PICK YOUR GAME", 360, 124, 19, INK)
-	_txt("Simple controls. Big rematches.", 548, 124, 13, MUTED)
+func _draw_select() -> void:
+	_rr(Rect2(38, 28, 1204, 90), WHITE, 26)
+	_rr(Rect2(52, 45, 164, 55), Color("#EDF0F8"), 15)
+	_center("← SETUP", 52, 77, 164, 16, INK)
+	_center("CHOOSE A MINI-GAME", 230, 70, 700, 27, INK)
+	_center("%d PLAYER%s · PICK YOUR CHALLENGE" % [player_count, "" if player_count == 1 else "S"], 230, 94, 700, 11, MUTED)
+	_rr(_select_tournament_rect(), YELLOW, 15)
+	_center("RANDOM TOURNAMENT  →", _select_tournament_rect().position.x, 77, _select_tournament_rect().size.x, 13, INK)
 	for i in range(GAMES.size()):
-		_draw_game_card(i, _home_game_rect(i))
+		_draw_game_card(i, _select_game_rect(i))
+	_rr(Rect2(38, 621, 1204, 46), WHITE, 14)
+	_center("CHOOSE A GAME TO START  ·  OR PLAY A RANDOM TOURNAMENT", 38, 649, 1204, 12, MUTED)
 
 func _draw_mark(center: Vector2, scale_factor: float) -> void:
 	var s := scale_factor
@@ -202,7 +255,7 @@ func _draw_game_icon(id: String, center: Vector2, col: Color) -> void:
 func _draw_game() -> void:
 	var data := _get_game_data(current_game)
 	_rr(Rect2(24, 24, 122, 48), WHITE, 15)
-	_center("← BACK", 24, 54, 122, 15, INK)
+	_center("← GAMES", 24, 54, 122, 15, INK)
 	_center(str(data["title"]), 220, 57, 840, 28, INK)
 	_center("ROUND %d%s" % [round_index, "  /  %d" % tournament_round_count if tournament_active else "  /  QUICK PLAY"], 220, 83, 840, 13, MUTED)
 	_rr(Rect2(48, 112, 1184, 380), WHITE, 24)
@@ -242,14 +295,29 @@ func _draw_game_stage() -> void:
 					_center("?", rect.position.x, rect.position.y + 39, rect.size.x, 22, MUTED)
 			_center("PLAYER %d'S TURN" % (active_memory_player + 1) if phase == "memory_input" else "MEMORIZE THE COLORS", 350, 340, 580, 19, PURPLE)
 		"mini_racers":
-			_center("TAP YOUR PANEL TO BOOST", 150, 190, 980, 18, MUTED)
+			_center("HOLD YOUR LANE BUTTON TO ACCELERATE", 118, 150, 425, 15, Color("#E5EAF5"))
+			_rr(Rect2(82, 162, 1120, 290), Color("#B8E6C5"), 24)
+			for gx in range(95, 1180, 30):
+				draw_line(Vector2(gx, 168), Vector2(gx + 18, 184), Color("#90CAA3"), 2, true)
+				draw_line(Vector2(gx, 430), Vector2(gx + 18, 446), Color("#90CAA3"), 2, true)
+			_rr(Rect2(96, 174, 1092, 266), Color("#263047"), 20)
+			draw_line(Vector2(108, 182), Vector2(1176, 182), Color("#E9EEF8"), 3, true)
+			draw_line(Vector2(108, 432), Vector2(1176, 432), Color("#E9EEF8"), 3, true)
+			for lane in range(1, player_count):
+				var lane_y := 174.0 + 266.0 * float(lane) / float(player_count)
+				for dash_x in range(110, 1160, 42):
+					_rr(Rect2(dash_x, lane_y - 1.5, 19, 3), Color("#7A8499"), 1)
+			for start_y in range(190, 425, 24):
+				_rr(Rect2(151, start_y, 5, 13), YELLOW, 2)
+			for finish_y in range(180, 435, 18):
+				_rr(Rect2(1080, finish_y, 8, 9), WHITE if int(finish_y / 18) % 2 == 0 else INK, 1)
+			_txt("START", 121, 201, 10, YELLOW)
+			_txt("FINISH", 1050, 201, 10, WHITE)
 			for p in range(player_count):
-				var y := 230.0 + p * 48.0
-				_rr(Rect2(205, y, 870, 31), Color("#E9EDF6"), 10)
-				var progress := clampf(float(player_data[p]["progress"]) / 48.0, 0.0, 1.0)
-				_rr(Rect2(205, y, maxf(30.0, 870.0 * progress), 31), PLAYER_COLORS[p], 10)
-				_center("P%d" % (p + 1), 110, y + 22, 70, 14, INK)
-			draw_line(Vector2(1088, 218), Vector2(1088, 425), INK, 4, true)
+				var lane_y := 174.0 + 266.0 * (float(p) + 0.5) / float(player_count)
+				var car_x := 160.0 + float(player_data[p]["progress"])
+				_draw_race_car(p, Vector2(car_x, lane_y - 15.0), PLAYER_COLORS[p])
+				_txt("P%d" % (p + 1), 113, lane_y + 4.0, 11, WHITE)
 		"dodge_arena":
 			var live := phase == "dodge_live"
 			draw_circle(center, 86, Color("#E5F7F0"))
@@ -262,6 +330,18 @@ func _draw_game_stage() -> void:
 			draw_circle(center, 53, col)
 			_center(BUTTON_LABELS[target_index], center.x - 40, center.y + 15, 80, 38, WHITE)
 			_center("MATCH THE COLOR ON YOUR PANEL", 260, 410, 760, 16, MUTED)
+
+func _draw_race_car(player: int, position: Vector2, car_color: Color) -> void:
+	# Chunky top-down car, with a windshield, number plate, headlights and animated wheel placement.
+	_rr(Rect2(position.x + 8, position.y + 26, 64, 9), Color("#101827"), 4)
+	_rr(Rect2(position.x + 4, position.y + 7, 74, 26), car_color, 9)
+	_rr(Rect2(position.x + 21, position.y + 2, 39, 17), car_color.lightened(0.14), 7)
+	_rr(Rect2(position.x + 27, position.y + 5, 25, 11), Color("#DDF7FF"), 4)
+	_rr(Rect2(position.x + 10, position.y + 11, 6, 5), WHITE, 2)
+	_rr(Rect2(position.x + 66, position.y + 11, 6, 5), WHITE, 2)
+	_rr(Rect2(position.x + 12, position.y + 29, 17, 7), Color("#101827"), 3)
+	_rr(Rect2(position.x + 54, position.y + 29, 17, 7), Color("#101827"), 3)
+	_center(str(player + 1), position.x + 28, position.y + 25, 24, 11, INK)
 
 func _draw_player_panel(p: int) -> void:
 	var rect := _player_panel_rect(p)
@@ -277,8 +357,11 @@ func _draw_player_panel(p: int) -> void:
 			_center(BUTTON_LABELS[c], button.position.x, button.position.y + 35, button.size.x, 14, INK if c == 2 else WHITE)
 	else:
 		var button := _player_action_rect(p)
-		_rr(button, YELLOW if current_game != "reflex_rush" else (Color("#45C994") if phase == "reflex_go" else Color("#FFCCD5")), 13)
-		var label := "TAP!" if current_game in ["tap_sprint", "mini_racers"] else ("DODGE!" if current_game == "dodge_arena" else "REACT!")
+		var button_color := YELLOW if current_game != "reflex_rush" else (Color("#45C994") if phase == "reflex_go" else Color("#FFCCD5"))
+		if current_game == "mini_racers" and bool(player_data[p]["throttle"]):
+			button_color = Color("#45C994")
+		_rr(button, button_color, 13)
+		var label := "TAP!" if current_game == "tap_sprint" else ("HOLD TO DRIVE" if current_game == "mini_racers" else ("DODGE!" if current_game == "dodge_arena" else "REACT!"))
 		_center(label, button.position.x, button.position.y + 36, button.size.x, 18, INK)
 	if tournament_active:
 		_txt("TOUR: %d PTS" % tournament_scores[p], rect.position.x + 15, rect.position.y + rect.size.y - 8, 10, MUTED)
@@ -321,22 +404,25 @@ func _draw_final() -> void:
 	_rr(Rect2(362, 570, 250, 64), YELLOW, 18)
 	_center("PLAY AGAIN", 362, 609, 250, 17, INK)
 	_rr(Rect2(650, 570, 250, 64), Color("#EDF0F8"), 18)
-	_center("HOME", 650, 609, 250, 17, INK)
+	_center("GAME MENU", 650, 609, 250, 17, INK)
 
 # -----------------------------------------------------------------------------
 # Navigation / hit testing
 # -----------------------------------------------------------------------------
 func _home_player_rect(i: int) -> Rect2:
-	return Rect2(58.0 + float(i) * 62.0, 242.0, 52.0, 52.0)
+	return Rect2(795.0 + float(i) * 103.0, 251.0, 82.0, 62.0)
 
 func _home_round_rect(i: int) -> Rect2:
-	return Rect2(58.0 + float(i) * 130.0, 334.0, 112.0, 42.0)
+	return Rect2(795.0 + float(i) * 202.0, 376.0, 190.0, 48.0)
 
 func _home_start_rect() -> Rect2:
-	return Rect2(54.0, 396.0, 264.0, 68.0)
+	return Rect2(795.0, 451.0, 417.0, 78.0)
 
-func _home_game_rect(i: int) -> Rect2:
-	return Rect2(360.0 + float(i % 3) * 292.0, 160.0 + float(int(i / 3)) * 236.0, 280.0, 218.0)
+func _select_game_rect(i: int) -> Rect2:
+	return Rect2(38.0 + float(i % 3) * 402.0, 137.0 + float(int(i / 3)) * 240.0, 386.0, 222.0)
+
+func _select_tournament_rect() -> Rect2:
+	return Rect2(975.0, 45.0, 267.0, 55.0)
 
 func _player_panel_rect(i: int) -> Rect2:
 	var gap := 8.0
@@ -360,6 +446,7 @@ func _color_action_rect(i: int, c: int) -> Rect2:
 func _handle_tap(pos: Vector2) -> void:
 	match screen_name:
 		"home": _home_tap(pos)
+		"select": _select_tap(pos)
 		"game": _game_tap(pos)
 		"result": _result_tap(pos)
 		"final": _final_tap(pos)
@@ -377,16 +464,38 @@ func _home_tap(pos: Vector2) -> void:
 			_save_local_save()
 			return
 	if _home_start_rect().has_point(pos):
+		screen_name = "select"
+		queue_redraw()
+		return
+
+func _select_tap(pos: Vector2) -> void:
+	if Rect2(52, 45, 164, 55).has_point(pos):
+		_go_home()
+		return
+	if _select_tournament_rect().has_point(pos):
 		_begin_tournament()
 		return
 	for i in range(GAMES.size()):
-		if _home_game_rect(i).has_point(pos):
+		if _select_game_rect(i).has_point(pos):
 			_start_quick_game(str(GAMES[i]["id"]))
 			return
 
+func _race_player_at(pos: Vector2) -> int:
+	if screen_name != "game" or current_game != "mini_racers":
+		return -1
+	for p in range(player_count):
+		if _player_action_rect(p).has_point(pos):
+			return p
+	return -1
+
+func _sync_race_throttle(player: int) -> void:
+	if player < 0 or player >= player_data.size():
+		return
+	player_data[player]["throttle"] = race_mouse_player == player or race_touch_players.values().has(player)
+
 func _game_tap(pos: Vector2) -> void:
 	if Rect2(24, 24, 122, 48).has_point(pos):
-		_go_home()
+		_go_to_select()
 		return
 	if pos.y < 520.0:
 		return
@@ -413,13 +522,13 @@ func _result_tap(pos: Vector2) -> void:
 		if tournament_active:
 			_show_final()
 		else:
-			_go_home()
+			_go_to_select()
 
 func _final_tap(pos: Vector2) -> void:
 	if Rect2(362, 570, 250, 64).has_point(pos):
 		_begin_tournament()
 	elif Rect2(650, 570, 250, 64).has_point(pos):
-		_go_home()
+		_go_to_select()
 
 func _start_quick_game(game_id: String) -> void:
 	tournament_active = false
@@ -452,6 +561,8 @@ func _start_next_tournament_round() -> void:
 
 func _start_game(game_id: String) -> void:
 	current_game = game_id
+	race_mouse_player = -1
+	race_touch_players.clear()
 	screen_name = "game"
 	game_elapsed = 0.0
 	game_time_left = 10.0
@@ -467,7 +578,7 @@ func _start_game(game_id: String) -> void:
 	player_data.clear()
 	player_status.clear()
 	for p in range(player_count):
-		player_data.append({"taps":0,"reaction_ms":-1,"responded":false,"progress":0,"hits":0,"misses":0,"acted":false,"raw":0.0,"input_index":0,"done":false})
+		player_data.append({"taps":0,"reaction_ms":-1,"responded":false,"progress":0.0,"speed":0.0,"throttle":false,"hits":0,"misses":0,"acted":false,"raw":0.0,"input_index":0,"done":false})
 		player_status.append("READY")
 	match current_game:
 		"tap_sprint":
@@ -492,14 +603,44 @@ func _start_game(game_id: String) -> void:
 func _go_home() -> void:
 	screen_name = "home"
 	phase = "idle"
+	race_mouse_player = -1
+	race_touch_players.clear()
 	_save_local_save()
+	queue_redraw()
+
+func _go_to_select() -> void:
+	screen_name = "select"
+	phase = "idle"
+	race_mouse_player = -1
+	race_touch_players.clear()
+	queue_redraw()
 
 func _tick_game(delta: float) -> void:
 	game_elapsed += delta
 	match current_game:
-		"tap_sprint", "mini_racers":
+		"tap_sprint":
 			game_time_left = maxf(0.0, game_time_left - delta)
 			if game_time_left <= 0.0:
+				_finish_round()
+		"mini_racers":
+			game_time_left = maxf(0.0, game_time_left - delta)
+			var crossed_finish := false
+			for p in range(player_count):
+				var speed := float(player_data[p]["speed"])
+				if bool(player_data[p]["throttle"]):
+					speed = minf(88.0, speed + 112.0 * delta)
+				else:
+					speed = maxf(0.0, speed - 145.0 * delta)
+				player_data[p]["speed"] = speed
+				player_data[p]["progress"] = minf(862.0, float(player_data[p]["progress"]) + speed * delta)
+				if float(player_data[p]["progress"]) >= 862.0:
+					player_status[p] = "FINISH!"
+					crossed_finish = true
+				elif bool(player_data[p]["throttle"]):
+					player_status[p] = "DRIVING · %d SPEED" % roundi(speed)
+				elif speed > 2.0:
+					player_status[p] = "COASTING · %d SPEED" % roundi(speed)
+			if crossed_finish or game_time_left <= 0.0:
 				_finish_round()
 		"target_rush":
 			game_time_left = maxf(0.0, game_time_left - delta)
@@ -576,8 +717,9 @@ func _player_action(p: int) -> void:
 			player_data[p]["taps"] = int(player_data[p]["taps"]) + 1
 			player_status[p] = "%d TAPS" % int(player_data[p]["taps"])
 		"mini_racers":
-			player_data[p]["progress"] = int(player_data[p]["progress"]) + 1
-			player_status[p] = "BOOST! %d" % int(player_data[p]["progress"])
+			if float(player_data[p]["progress"]) < 862.0:
+				player_data[p]["speed"] = minf(88.0, float(player_data[p]["speed"]) + 18.0)
+				player_status[p] = "NITRO BOOST! %d" % roundi(float(player_data[p]["speed"]))
 		"reflex_rush":
 			if player_data[p]["responded"]:
 				return
@@ -695,7 +837,7 @@ func _score_label(p: int) -> String:
 		"tap_sprint": return "%d taps" % int(data.get("taps", 0))
 		"reflex_rush": return ("%d ms" % int(data.get("reaction_ms", -1))) if int(data.get("reaction_ms", -1)) >= 0 else "False start / too slow"
 		"memory_grid": return "%d / 4 remembered" % int(data.get("raw", 0))
-		"mini_racers": return "%d boosts" % int(data.get("progress", 0))
+		"mini_racers": return "%d m raced" % int(data.get("progress", 0))
 		"dodge_arena": return "%d successful dodges" % int(data.get("hits", 0))
 		"target_rush": return "%d hits · %d misses" % [int(data.get("hits", 0)), int(data.get("misses", 0))]
 	return "Finished"
