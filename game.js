@@ -520,7 +520,7 @@
     } else {
       html = '<div class="arena-big">MATCH THIS!</div><h2>COLOR TARGET</h2><p>Tap the same color in your panel.</p><div class="arena-grid"><span class="arena-tile" id="target-display" style="width:65px;height:65px;font-weight:1000;display:grid;place-items:center;background:' + colors[game.target] + ';color:' + (game.target === 2 ? ink : "#fff") + '">' + ["R","B","Y","G"][game.target] + '</span></div><p style="margin-top:10px;font-weight:1000;color:' + game.data.color + '" id="target-label">' + ["RED","BLUE","YELLOW","GREEN"][game.target] + '</p>';
     }
-    return '<div class="arena" style="--arena-bg:' + bg + ';--arena-dot:' + game.data.color + '"><div class="arena-pattern"></div><div class="arena-center">' + html + '</div></div>';
+    return '<div class="arena' + (id === "mini_racers" ? " racing-arena" : "") + '" style="--arena-bg:' + bg + ';--arena-dot:' + game.data.color + '"><div class="arena-pattern"></div><div class="arena-center">' + html + '</div></div>';
   }
   function renderGame() {
     currentScreen = "game";
@@ -572,7 +572,7 @@
       ranks.map(function (row, rank) {
         return '<div class="result-row" style="--player-color:' + colors[row.index] + ';--player-soft:' + softColors[row.index] + '"><div class="rank-pill">' + (rank + 1) + '</div><div><div class="result-player">' + playerName(row.index) + '</div><div class="result-detail">' + (rank === 0 ? "THE CHAMPION" : "GREAT RUN") + '</div></div><div class="result-score">' + row.score + ' PTS</div><div></div></div>';
       }).join("") +
-      '<div class="result-actions"><button class="primary-button" data-action="start-tournament">RUN IT BACK →</button><button class="secondary-button" data-action="home">BACK TO ARCADE</button></div></div></div>';
+      '<div class="result-actions"><button class="primary-button" data-action="start-tournament">RUN IT BACK →</button><button class="secondary-button" data-action="game-menu">BACK TO GAMES</button></div></div></div>';
   }
   function updateSoundButton() {
     const btn = document.getElementById("sound-toggle");
