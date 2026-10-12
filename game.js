@@ -13,7 +13,14 @@
     { id: "memory_grid", title: "Memory Grid", category: "BRAIN", desc: "Remember the pattern. Repeat it perfectly.", color: "#9875ef", soft: "#f0eaff", length: "TURN BASED" },
     { id: "mini_racers", title: "Mini Racers", category: "RACING", desc: "Hold to drive. Use nitro to reach the finish.", color: "#ffad4d", soft: "#fff0dd", length: "12 SEC" },
     { id: "dodge_arena", title: "Dodge Arena", category: "SURVIVAL", desc: "Dodge on the signal. Last player wins.", color: "#47c995", soft: "#e1f8ed", length: "8 WAVES" },
-    { id: "target_rush", title: "Target Rush", category: "ACCURACY", desc: "Hit the matching color before time runs out.", color: "#ed7ac4", soft: "#fdeafa", length: "12 SEC" }
+    { id: "target_rush", title: "Target Rush", category: "ACCURACY", desc: "Hit the matching color before time runs out.", color: "#ed7ac4", soft: "#fdeafa", length: "12 SEC" },
+    { id: "block_battle", title: "Block Battle", category: "PUZZLE", desc: "Place shapes, clear lines, and beat every score.", color: "#4d8dff", soft: "#e9f1ff", length: "35 SEC EACH" },
+    { id: "orb_dash", title: "Orb Dash", category: "MOVEMENT", desc: "Steer your orb, grab gems, and dodge rivals.", color: "#7d65f2", soft: "#eeebff", length: "30 SEC" }
+  ];
+  const BLOCK_SHAPES = [
+    [[0,0]], [[0,0],[1,0],[0,1],[1,1]], [[0,0],[1,0],[2,0]], [[0,0],[0,1],[0,2]],
+    [[0,0],[1,0],[2,0],[1,1]], [[0,0],[0,1],[1,1],[2,1]], [[0,0],[1,0],[1,1],[2,1]],
+    [[0,0],[1,0],[2,0],[3,0]], [[0,0],[0,1],[0,2],[1,2]], [[1,0],[0,1],[1,1],[2,1]]
   ];
   let settings = { players: 2, rounds: 5, sound: true };
   let currentScreen = "home";
@@ -81,6 +88,10 @@
       shapes = '<path d="M0 42H320M0 109H320" stroke="#fff" stroke-width="6" opacity=".85"/><path d="M0 75H320" stroke="#fff" stroke-width="4" stroke-dasharray="13 12" opacity=".8"/><g transform="translate(38 41)"><rect x="0" y="3" width="74" height="34" rx="12" fill="#ff6c84"/><rect x="18" y="-7" width="35" height="22" rx="7" fill="#fff"/><circle cx="17" cy="39" r="9" fill="#17233e"/><circle cx="58" cy="39" r="9" fill="#17233e"/><path d="M28 9h18" stroke="#2eb8e8" stroke-width="7" stroke-linecap="round"/></g><g transform="translate(183 71)"><rect x="0" y="3" width="84" height="34" rx="12" fill="#2eb8e8"/><rect x="20" y="-7" width="39" height="22" rx="7" fill="#fff"/><circle cx="17" cy="39" r="9" fill="#17233e"/><circle cx="67" cy="39" r="9" fill="#17233e"/><path d="M30 9h19" stroke="#ffe16b" stroke-width="7" stroke-linecap="round"/></g>';
     } else if (id === "dodge_arena") {
       shapes = '<circle cx="160" cy="75" r="54" fill="#fff" opacity=".6"/><circle cx="160" cy="75" r="39" fill="#47c995"/><circle cx="160" cy="75" r="24" fill="#fff"/><circle cx="160" cy="75" r="11" fill="#ff6c84"/><path d="M67 32l8 13 15 2-11 10 3 15-15-7-13 7 2-15-11-10 15-2zM254 83l6 10 12 2-9 8 2 12-11-6-11 6 2-12-9-8 12-2z" fill="#ffe16b"/><path d="M118 20l-13 14M204 118l-14 12" stroke="#fff" stroke-width="6" stroke-linecap="round"/>';
+    } else if (id === "block_battle") {
+      shapes = '<g transform="translate(78 18)"><rect x="0" y="0" width="38" height="38" rx="7" fill="#4d8dff"/><rect x="42" y="0" width="38" height="38" rx="7" fill="#7d65f2"/><rect x="84" y="0" width="38" height="38" rx="7" fill="#ff6c84"/><rect x="0" y="42" width="38" height="38" rx="7" fill="#47c995"/><rect x="42" y="42" width="38" height="38" rx="7" fill="#ffad4d"/><rect x="84" y="42" width="38" height="38" rx="7" fill="#ffe16b"/><rect x="126" y="0" width="38" height="38" rx="7" fill="#2eb8e8"/><rect x="126" y="42" width="38" height="38" rx="7" fill="#4d8dff"/><path d="M0 98H164" stroke="#fff" stroke-width="7" stroke-linecap="round" opacity=".8"/></g>';
+    } else if (id === "orb_dash") {
+      shapes = '<circle cx="160" cy="75" r="59" fill="#fff" opacity=".5"/><circle cx="160" cy="75" r="41" fill="#7d65f2"/><circle cx="150" cy="63" r="13" fill="#fff" opacity=".7"/><path d="M222 32l8 18 19 2-14 13 4 19-17-10-17 10 4-19-14-13 19-2z" fill="#ffe16b"/><circle cx="78" cy="105" r="12" fill="#2eb8e8" stroke="#fff" stroke-width="4"/><circle cx="262" cy="110" r="9" fill="#ff6c84" stroke="#fff" stroke-width="3"/>';
     } else {
       shapes = '<circle cx="160" cy="75" r="57" fill="#fff" opacity=".6"/><circle cx="160" cy="75" r="44" fill="#ed7ac4"/><circle cx="160" cy="75" r="31" fill="#fff"/><circle cx="160" cy="75" r="18" fill="#ff6c84"/><circle cx="160" cy="75" r="7" fill="#ffe16b"/><path d="M65 37l20 20M255 112l-17-17M259 36l-10 12M58 103l13-7" stroke="#fff" stroke-width="7" stroke-linecap="round"/>';
     }
@@ -134,7 +145,128 @@
   }
 
   function newPlayer() {
-    return { taps: 0, reaction: null, responded: false, progress: 0, raceSpeed: 0, throttle: false, boosts: 0, hits: 0, misses: 0, early: false, dodged: false, status: "READY", memoryInput: 0, memoryScore: 0, done: false, score: 0 };
+    return {
+      taps: 0, reaction: null, responded: false, progress: 0, raceSpeed: 0, throttle: false, boosts: 0,
+      hits: 0, misses: 0, early: false, dodged: false, status: "READY",
+      memoryInput: 0, memoryScore: 0, done: false, score: 0,
+      board: Array(64).fill(null), blockPieces: [], blockScore: 0, blockLines: 0,
+      orbX: 50, orbY: 50, joystickX: 0, joystickY: 0
+    };
+  }
+  function makeBlockPieces() {
+    return Array.from({ length: 3 }, function () {
+      return { cells: BLOCK_SHAPES[Math.floor(Math.random() * BLOCK_SHAPES.length)].map(function (cell) { return [cell[0], cell[1]]; }), colorIndex: Math.floor(Math.random() * colors.length), used: false };
+    });
+  }
+  function blockPieceFits(board, piece, x, y) {
+    return piece.cells.every(function (cell) {
+      const px = x + cell[0], py = y + cell[1];
+      return px >= 0 && px < 8 && py >= 0 && py < 8 && board[py * 8 + px] === null;
+    });
+  }
+  function blockPlayerHasMove(player) {
+    return player.blockPieces.some(function (piece) {
+      if (piece.used) return false;
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) if (blockPieceFits(player.board, piece, x, y)) return true;
+      return false;
+    });
+  }
+  function firstUsableBlockPiece(player) {
+    for (let i = 0; i < player.blockPieces.length; i++) if (!player.blockPieces[i].used) return i;
+    return -1;
+  }
+  function advanceBlockTurn() {
+    if (!game || currentScreen !== "game" || game.id !== "block_battle") return;
+    const next = game.activePuzzlePlayer + 1;
+    if (next >= game.players.length) { finishRound(); return; }
+    game.activePuzzlePlayer = next;
+    game.selectedPiece = firstUsableBlockPiece(game.players[next]);
+    game.timeLeft = game.duration;
+    game.players[next].status = "YOUR TURN — MAKE IT COUNT!";
+    if (!blockPlayerHasMove(game.players[next])) {
+      game.players[next].status = "NO MOVES LEFT";
+      game.timeLeft = 0.01;
+    }
+    renderGame();
+  }
+  function placeBlockPiece(row, col) {
+    if (!game || currentScreen !== "game" || game.id !== "block_battle" || row < 0 || row > 7 || col < 0 || col > 7) return;
+    const player = game.players[game.activePuzzlePlayer];
+    const pieceIndex = game.selectedPiece;
+    const piece = player.blockPieces[pieceIndex];
+    if (!piece || piece.used) { toast("Choose a shape first."); return; }
+    if (!blockPieceFits(player.board, piece, col, row)) { toast("That shape doesn't fit there."); beep(170, 0.04, "triangle"); return; }
+    piece.cells.forEach(function (cell) { player.board[(row + cell[1]) * 8 + col + cell[0]] = piece.colorIndex; });
+    player.blockScore += piece.cells.length;
+    piece.used = true;
+    const fullRows = [], fullCols = [];
+    for (let y = 0; y < 8; y++) if (player.board.slice(y * 8, y * 8 + 8).every(function (v) { return v !== null; })) fullRows.push(y);
+    for (let x = 0; x < 8; x++) if (Array.from({ length: 8 }, function (_, y) { return player.board[y * 8 + x]; }).every(function (v) { return v !== null; })) fullCols.push(x);
+    if (fullRows.length || fullCols.length) {
+      const cleared = new Set();
+      fullRows.forEach(function (y) { for (let x = 0; x < 8; x++) cleared.add(y * 8 + x); });
+      fullCols.forEach(function (x) { for (let y = 0; y < 8; y++) cleared.add(y * 8 + x); });
+      cleared.forEach(function (i) { player.board[i] = null; });
+      const lineCount = fullRows.length + fullCols.length;
+      player.blockLines += lineCount;
+      player.blockScore += lineCount * 10 + Math.max(0, lineCount - 1) * 5;
+      player.status = lineCount > 1 ? "COMBO! +" + (lineCount * 10 + (lineCount - 1) * 5) : "LINE CLEAR! +10";
+      beep(650 + lineCount * 90, 0.1, "triangle");
+    } else {
+      player.status = "+" + piece.cells.length + " BLOCKS";
+      beep(430, 0.045, "sine");
+    }
+    if (player.blockPieces.every(function (p) { return p.used; })) {
+      player.blockPieces = makeBlockPieces();
+      game.selectedPiece = 0;
+    } else {
+      game.selectedPiece = firstUsableBlockPiece(player);
+    }
+    if (!blockPlayerHasMove(player)) {
+      player.status = "BOARD FULL — TURN OVER";
+      renderGame();
+      advanceBlockTurn();
+      return;
+    }
+    renderGame();
+  }
+  function updateOrbArena() {
+    if (!game || game.id !== "orb_dash") return;
+    game.players.forEach(function (p, i) {
+      const orb = document.getElementById("orb-player-" + i);
+      if (orb) { orb.style.left = p.orbX + "%"; orb.style.top = p.orbY + "%"; }
+    });
+    const target = document.getElementById("orb-gem");
+    if (target) { target.style.left = game.orbTarget.x + "%"; target.style.top = game.orbTarget.y + "%"; }
+    const hud = document.getElementById("orb-leader");
+    if (hud) {
+      const ranked = game.players.map(function (p, i) { return { i: i, score: p.hits }; }).sort(function (a, b) { return b.score - a.score; });
+      hud.textContent = "P" + (ranked[0].i + 1) + " LEADS · " + (ranked[0].score * 10) + " PTS";
+    }
+  }
+  function setJoystickValue(playerIndex, button, event) {
+    if (!game || game.id !== "orb_dash" || !game.players[playerIndex]) return;
+    const rect = button.getBoundingClientRect();
+    const radius = Math.max(20, Math.min(rect.width, rect.height) * 0.36);
+    let dx = event.clientX - (rect.left + rect.width / 2);
+    let dy = event.clientY - (rect.top + rect.height / 2);
+    const distance = Math.hypot(dx, dy);
+    if (distance > radius) { dx *= radius / distance; dy *= radius / distance; }
+    game.players[playerIndex].joystickX = dx / radius;
+    game.players[playerIndex].joystickY = dy / radius;
+    const knob = button.querySelector(".joystick-knob");
+    if (knob) knob.style.transform = "translate(calc(-50% + " + dx + "px), calc(-50% + " + dy + "px))";
+  }
+  function releaseJoystick(pointerId) {
+    const owner = joystickPointerOwners.get(pointerId);
+    if (!owner) return;
+    joystickPointerOwners.delete(pointerId);
+    if (game && game.id === "orb_dash" && game.players[owner.playerIndex]) {
+      game.players[owner.playerIndex].joystickX = 0;
+      game.players[owner.playerIndex].joystickY = 0;
+    }
+    const knob = owner.button.querySelector(".joystick-knob");
+    if (knob) knob.style.transform = "translate(-50%, -50%)";
   }
   function startTournament() {
     tournament = { active: true, round: 1, rounds: settings.rounds, scores: [0,0,0,0], recent: [] };
@@ -155,15 +287,29 @@
   }
   function startGame(id, inTournament) {
     const g = gameById(id);
-    const duration = id === "tap_sprint" ? 10 : ((id === "mini_racers" || id === "target_rush") ? 12 : 0);
+    const duration = id === "tap_sprint" ? 10 : ((id === "mini_racers" || id === "target_rush") ? 12 : (id === "block_battle" ? 35 : (id === "orb_dash" ? 30 : 0)));
     game = {
       id: id, data: g, tournament: inTournament, round: tournament ? tournament.round : 1,
       players: Array.from({ length: settings.players }, newPlayer),
       duration: duration, timeLeft: duration, phase: "playing", phaseTimer: 0,
       startedAt: performance.now(), target: Math.floor(Math.random() * 4), targetCooldown: 0.65,
       sequence: Array.from({ length: 5 }, function () { return Math.floor(Math.random() * 4); }),
-      showIndex: -1, memoryPlayer: 0, wave: 1, nextSoundAt: 0
+      showIndex: -1, memoryPlayer: 0, wave: 1, nextSoundAt: 0,
+      activePuzzlePlayer: 0, selectedPiece: 0, orbTarget: { x: 50, y: 50 }
     };
+    game.players.forEach(function (p, i) {
+      p.blockPieces = makeBlockPieces();
+      p.orbX = i % 2 === 0 ? 17 : 83;
+      p.orbY = i < 2 ? 24 : 76;
+    });
+    if (id === "block_battle") {
+      game.players[0].status = "YOUR TURN — MAKE IT COUNT!";
+      game.timeLeft = duration;
+    }
+    if (id === "orb_dash") {
+      game.orbTarget = { x: 24 + Math.random() * 52, y: 20 + Math.random() * 60 };
+      game.timeLeft = duration;
+    }
     if (id === "reflex_rush") {
       game.phase = "reflex_wait";
       game.phaseTimer = 1.5 + Math.random() * 2.2;
@@ -230,6 +376,31 @@
           updateTargetDisplay();
         }
       }
+      if (game.timeLeft <= 0) finishRound();
+    } else if (game.id === "block_battle") {
+      game.timeLeft = Math.max(0, game.timeLeft - dt);
+      const timer = document.getElementById("timer-value");
+      if (timer) timer.textContent = fmtTime(game.timeLeft);
+      if (game.timeLeft <= 0) advanceBlockTurn();
+    } else if (game.id === "orb_dash") {
+      game.timeLeft = Math.max(0, game.timeLeft - dt);
+      const timer = document.getElementById("timer-value");
+      if (timer) timer.textContent = fmtTime(game.timeLeft);
+      game.players.forEach(function (p, i) {
+        p.orbX = Math.max(5, Math.min(95, p.orbX + p.joystickX * 22 * dt));
+        p.orbY = Math.max(12, Math.min(88, p.orbY + p.joystickY * 22 * dt));
+        const dx = p.orbX - game.orbTarget.x, dy = p.orbY - game.orbTarget.y;
+        if (Math.hypot(dx, dy) < 5.2) {
+          p.hits++;
+          p.status = "GEM +10 · " + (p.hits * 10) + " PTS";
+          game.orbTarget = { x: 8 + Math.random() * 84, y: 12 + Math.random() * 76 };
+          beep(780 + i * 45, 0.07, "sine");
+        } else if (Math.abs(p.joystickX) + Math.abs(p.joystickY) > 0.2) {
+          p.status = "MOVING · " + (p.hits * 10) + " PTS";
+        }
+      });
+      updateOrbArena();
+      refreshPlayerPanels();
       if (game.timeLeft <= 0) finishRound();
     } else if (game.id === "reflex_rush") {
       game.phaseTimer -= dt;
