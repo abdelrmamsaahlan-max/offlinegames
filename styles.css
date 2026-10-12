@@ -160,3 +160,7 @@ body{background:radial-gradient(ellipse at 2% 7%,rgba(90,74,232,.10),transparent
  .joystick-knob{width:30px;height:30px}
  .orb-player-panels .player-panel{grid-template-columns:minmax(0,1fr) 77px}
 }
+
+.block-piece-button,.block-cell{touch-action:none;-webkit-user-select:none;user-select:none}
+.block-piece-button.dragging{opacity:.86;transform:scale(1.04);border-color:var(--purple);box-shadow:0 14px 28px rgba(66,51,196,.18)}
+.block-cell:active{transform:scale(.95)}
