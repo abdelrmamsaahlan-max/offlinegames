@@ -529,7 +529,7 @@ func _draw_result() -> void:
 	_rr(Rect2(362, 555, 250, 64), YELLOW, 18)
 	_center("NEXT ROUND" if tournament_active else "REMATCH", 362, 594, 250, 17, INK)
 	_rr(Rect2(650, 555, 250, 64), Color("#EDF0F8"), 18)
-	_center("FINAL SCORES" if tournament_active else "HOME", 650, 594, 250, 17, INK)
+	_center("FINAL SCORES" if tournament_active else "GAME MENU", 650, 594, 250, 17, INK)
 
 func _draw_final() -> void:
 	_rr(Rect2(250, 42, 780, 630), WHITE, 30)
@@ -610,20 +610,29 @@ func _block_player_has_move(player: Dictionary) -> bool:
 	return false
 
 func _advance_block_player() -> void:
-	active_block_player += 1
-	if active_block_player >= player_count:
-		_finish_round()
+	# Skip players whose boards have no legal placement, avoiding dead turns.
+	var attempts := 0
+	while attempts < player_count:
+		active_block_player += 1
+		if active_block_player >= player_count:
+			_finish_round()
+			return
+		var player: Dictionary = player_data[active_block_player]
+		if not _block_player_has_move(player):
+			player_status[active_block_player] = "NO MOVES LEFT"
+			attempts += 1
+			continue
+		var pieces: Array = player["block_pieces"]
+		selected_block_piece = 0
+		for i in range(pieces.size()):
+			if not bool(pieces[i]["used"]):
+				selected_block_piece = i
+				break
+		game_time_left = 35.0
+		player_status[active_block_player] = "YOUR TURN — MAKE IT COUNT!"
+		queue_redraw()
 		return
-	var player: Dictionary = player_data[active_block_player]
-	var pieces: Array = player["block_pieces"]
-	selected_block_piece = 0
-	for i in range(pieces.size()):
-		if not bool(pieces[i]["used"]):
-			selected_block_piece = i
-			break
-	game_time_left = 35.0
-	player_status[active_block_player] = "YOUR TURN — MAKE IT COUNT!"
-	queue_redraw()
+	_finish_round()
 
 func _place_block_piece(row: int, col: int) -> void:
 	if current_game != "block_battle" or active_block_player < 0 or active_block_player >= player_data.size():
