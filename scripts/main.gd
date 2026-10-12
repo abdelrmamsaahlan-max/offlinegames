@@ -555,10 +555,11 @@ func _make_block_pieces() -> Array:
 	return pieces
 
 func _block_piece_fits(board: Array, piece: Dictionary, col: int, row: int) -> bool:
-	for offset in piece["cells"]:
-		var x := col + offset.x
-		var y := row + offset.y
-		if x < 0 or x >= 8 or y < 0 or y >= 8 or int(board[y * 8 + x]) >= 0:
+	for offset_value in piece["cells"]:
+		var offset: Vector2i = offset_value
+		var board_x: int = col + offset.x
+		var board_y: int = row + offset.y
+		if board_x < 0 or board_x >= 8 or board_y < 0 or board_y >= 8 or int(board[board_y * 8 + board_x]) >= 0:
 			return false
 	return true
 
@@ -603,7 +604,8 @@ func _place_block_piece(row: int, col: int) -> void:
 		return
 	var board: Array = player["block_board"]
 	var offsets: Array = piece["cells"]
-	for offset in offsets:
+	for offset_value in offsets:
+		var offset: Vector2i = offset_value
 		board[(row + offset.y) * 8 + col + offset.x] = int(piece["color_index"])
 	player["block_board"] = board
 	player["block_score"] = int(player["block_score"]) + offsets.size()
@@ -611,22 +613,22 @@ func _place_block_piece(row: int, col: int) -> void:
 	pieces[selected_block_piece] = piece
 	var full_rows: Array[int] = []
 	var full_cols: Array[int] = []
-	for y in range(8):
-		var full := true
-		for x in range(8):
-			if int(board[y * 8 + x]) < 0:
-				full = false
+	for row_index in range(8):
+		var row_full := true
+		for col_index in range(8):
+			if int(board[row_index * 8 + col_index]) < 0:
+				row_full = false
 				break
-		if full:
-			full_rows.append(y)
-	for x in range(8):
-		var full := true
-		for y in range(8):
-			if int(board[y * 8 + x]) < 0:
-				full = false
+		if row_full:
+			full_rows.append(row_index)
+	for col_index in range(8):
+		var col_full := true
+		for row_index in range(8):
+			if int(board[row_index * 8 + col_index]) < 0:
+				col_full = false
 				break
-		if full:
-			full_cols.append(x)
+		if col_full:
+			full_cols.append(col_index)
 	if not full_rows.is_empty() or not full_cols.is_empty():
 		var cleared: Dictionary = {}
 		for y in full_rows:
@@ -646,7 +648,12 @@ func _place_block_piece(row: int, col: int) -> void:
 	player["block_board"] = board
 	player["block_pieces"] = pieces
 	player_data[active_block_player] = player
-	if pieces.all(func(item): return bool(item["used"])):
+	var all_pieces_used := true
+	for piece_state in pieces:
+		if not bool(piece_state["used"]):
+			all_pieces_used = false
+			break
+	if all_pieces_used:
 		player["block_pieces"] = _make_block_pieces()
 		player_data[active_block_player] = player
 		selected_block_piece = 0
