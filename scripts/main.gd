@@ -88,16 +88,28 @@ func _gui_input(event: InputEvent) -> void:
 		if event.pressed:
 			_handle_tap(mouse_pos)
 			race_mouse_player = -1
+			orb_mouse_player = -1
 			if screen_name == "game" and current_game == "mini_racers":
 				race_mouse_player = _race_player_at(mouse_pos)
 				if race_mouse_player >= 0:
 					player_data[race_mouse_player]["throttle"] = true
+			elif screen_name == "game" and current_game == "orb_dash":
+				orb_mouse_player = _orb_player_at(mouse_pos)
+				if orb_mouse_player >= 0:
+					_update_orb_joystick(orb_mouse_player, mouse_pos)
 		else:
 			if race_mouse_player >= 0 and race_mouse_player < player_data.size():
 				player_data[race_mouse_player]["throttle"] = false
+			if orb_mouse_player >= 0 and orb_mouse_player < player_data.size():
+				player_data[orb_mouse_player]["joystick"] = Vector2.ZERO
 			race_mouse_player = -1
+			orb_mouse_player = -1
 		queue_redraw()
 		accept_event()
+	elif event is InputEventMouseMotion:
+		if orb_mouse_player >= 0 and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+			_update_orb_joystick(orb_mouse_player, event.position * scale_to_design)
+			queue_redraw()
 	elif event is InputEventScreenTouch:
 		var touch_pos := event.position * scale_to_design
 		if event.pressed:
@@ -107,13 +119,26 @@ func _gui_input(event: InputEvent) -> void:
 				if touch_player >= 0:
 					race_touch_players[event.index] = touch_player
 					player_data[touch_player]["throttle"] = true
+			elif screen_name == "game" and current_game == "orb_dash":
+				var orb_player := _orb_player_at(touch_pos)
+				if orb_player >= 0:
+					orb_touch_players[event.index] = orb_player
+					_update_orb_joystick(orb_player, touch_pos)
 		else:
 			if race_touch_players.has(event.index):
 				var released_player: int = int(race_touch_players[event.index])
 				race_touch_players.erase(event.index)
 				_sync_race_throttle(released_player)
+			if orb_touch_players.has(event.index):
+				var released_orb: int = int(orb_touch_players[event.index])
+				orb_touch_players.erase(event.index)
+				_sync_orb_joystick(released_orb)
 		queue_redraw()
 		accept_event()
+	elif event is InputEventScreenDrag:
+		if orb_touch_players.has(event.index):
+			_update_orb_joystick(int(orb_touch_players[event.index]), event.position * scale_to_design)
+			queue_redraw()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE or event.keycode == KEY_BACK:
 			if screen_name == "game":
@@ -520,6 +545,39 @@ func _race_player_at(pos: Vector2) -> int:
 		if _player_action_rect(p).has_point(pos):
 			return p
 	return -1
+
+func _joystick_center(player: int) -> Vector2:
+	var panel := _player_panel_rect(player)
+	return Vector2(panel.position.x + panel.size.x - 53.0, panel.position.y + 98.0)
+
+func _joystick_base_rect(player: int) -> Rect2:
+	return Rect2(_joystick_center(player) - Vector2(39.0, 39.0), Vector2(78.0, 78.0))
+
+func _orb_player_at(pos: Vector2) -> int:
+	if screen_name != "game" or current_game != "orb_dash":
+		return -1
+	for p in range(player_count):
+		if _joystick_base_rect(p).has_point(pos):
+			return p
+	return -1
+
+func _update_orb_joystick(player: int, pos: Vector2) -> void:
+	if player < 0 or player >= player_data.size():
+		return
+	var stick: Vector2 = (pos - _joystick_center(player)) / 30.0
+	if stick.length() > 1.0:
+		stick = stick.normalized()
+	player_data[player]["joystick"] = stick
+	player_status[player] = "MOVING" if stick.length() > 0.08 else "READY"
+
+func _sync_orb_joystick(player: int) -> void:
+	if player < 0 or player >= player_data.size():
+		return
+	var still_held := orb_mouse_player == player
+	for owner in orb_touch_players.values():
+		if int(owner) == player:
+			still_held = true
+	player_data[player]["joystick"] = Vector2.ZERO if not still_held else player_data[player]["joystick"]
 
 func _sync_race_throttle(player: int) -> void:
 	if player < 0 or player >= player_data.size():
