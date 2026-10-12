@@ -18,7 +18,7 @@ const GAMES: Array[Dictionary] = [
 	{"id":"tap_sprint","title":"TAP SPRINT","category":"SPEED","description":"Mash the button. Own the leaderboard.","color":Color("#29B8E8"),"duration":10},
 	{"id":"reflex_rush","title":"REFLEX RUSH","category":"REACTION","description":"Wait for GO. Don't jump the gun.","color":Color("#FF667F"),"duration":0},
 	{"id":"memory_grid","title":"MEMORY GRID","category":"BRAIN","description":"Remember the order. Repeat it perfectly.","color":Color("#9875EF"),"duration":0},
-	{"id":"mini_racers","title":"MINI RACERS","category":"RACING","description":"Tap for speed. Beat them to the line.","color":Color("#FFAA45"),"duration":12},
+	{"id":"mini_racers","title":"MINI RACERS","category":"RACING","description":"Hold to drive. Use nitro to reach the finish.","color":Color("#FFAA45"),"duration":12},
 	{"id":"dodge_arena","title":"DODGE ARENA","category":"SURVIVAL","description":"Dodge on the signal. Last player wins.","color":Color("#46C99B"),"duration":0},
 	{"id":"target_rush","title":"TARGET RUSH","category":"ACCURACY","description":"Hit the matching color before time runs out.","color":Color("#F07CC3"),"duration":12}
 ]
@@ -65,12 +65,12 @@ func _process(delta: float) -> void:
 func _gui_input(event: InputEvent) -> void:
 	var scale_to_design := Vector2(SW, SH) / get_viewport_rect().size
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		var pos := event.position * scale_to_design
+		var mouse_pos := event.position * scale_to_design
 		if event.pressed:
-			_handle_tap(pos)
+			_handle_tap(mouse_pos)
 			race_mouse_player = -1
 			if screen_name == "game" and current_game == "mini_racers":
-				race_mouse_player = _race_player_at(pos)
+				race_mouse_player = _race_player_at(mouse_pos)
 				if race_mouse_player >= 0:
 					player_data[race_mouse_player]["throttle"] = true
 		else:
@@ -80,24 +80,27 @@ func _gui_input(event: InputEvent) -> void:
 		queue_redraw()
 		accept_event()
 	elif event is InputEventScreenTouch:
-		var pos := event.position * scale_to_design
+		var touch_pos := event.position * scale_to_design
 		if event.pressed:
-			_handle_tap(pos)
+			_handle_tap(touch_pos)
 			if screen_name == "game" and current_game == "mini_racers":
-				var player := _race_player_at(pos)
-				if player >= 0:
-					race_touch_players[event.index] = player
-					player_data[player]["throttle"] = true
+				var touch_player := _race_player_at(touch_pos)
+				if touch_player >= 0:
+					race_touch_players[event.index] = touch_player
+					player_data[touch_player]["throttle"] = true
 		else:
 			if race_touch_players.has(event.index):
-				var player: int = int(race_touch_players[event.index])
+				var released_player: int = int(race_touch_players[event.index])
 				race_touch_players.erase(event.index)
-				_sync_race_throttle(player)
+				_sync_race_throttle(released_player)
 		queue_redraw()
 		accept_event()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == KEY_ESCAPE or event.keycode == KEY_BACK:
-			_go_to_select() if screen_name == "game" else _go_home()
+			if screen_name == "game":
+				_go_to_select()
+			else:
+				_go_home()
 			accept_event()
 
 func _draw() -> void:
@@ -304,9 +307,9 @@ func _draw_game_stage() -> void:
 			draw_line(Vector2(108, 182), Vector2(1176, 182), Color("#E9EEF8"), 3, true)
 			draw_line(Vector2(108, 432), Vector2(1176, 432), Color("#E9EEF8"), 3, true)
 			for lane in range(1, player_count):
-				var lane_y := 174.0 + 266.0 * float(lane) / float(player_count)
+				var divider_lane_y := 174.0 + 266.0 * float(lane) / float(player_count)
 				for dash_x in range(110, 1160, 42):
-					_rr(Rect2(dash_x, lane_y - 1.5, 19, 3), Color("#7A8499"), 1)
+					_rr(Rect2(dash_x, divider_lane_y - 1.5, 19, 3), Color("#7A8499"), 1)
 			for start_y in range(190, 425, 24):
 				_rr(Rect2(151, start_y, 5, 13), YELLOW, 2)
 			for finish_y in range(180, 435, 18):
@@ -314,10 +317,10 @@ func _draw_game_stage() -> void:
 			_txt("START", 121, 201, 10, YELLOW)
 			_txt("FINISH", 1050, 201, 10, WHITE)
 			for p in range(player_count):
-				var lane_y := 174.0 + 266.0 * (float(p) + 0.5) / float(player_count)
+				var car_lane_y := 174.0 + 266.0 * (float(p) + 0.5) / float(player_count)
 				var car_x := 160.0 + float(player_data[p]["progress"])
-				_draw_race_car(p, Vector2(car_x, lane_y - 15.0), PLAYER_COLORS[p])
-				_txt("P%d" % (p + 1), 113, lane_y + 4.0, 11, WHITE)
+				_draw_race_car(p, Vector2(car_x, car_lane_y - 15.0), PLAYER_COLORS[p])
+				_txt("P%d" % (p + 1), 113, car_lane_y + 4.0, 11, WHITE)
 		"dodge_arena":
 			var live := phase == "dodge_live"
 			draw_circle(center, 86, Color("#E5F7F0"))
