@@ -14,13 +14,27 @@ const YELLOW := Color("#FFE16B")
 const PLAYER_COLORS: Array[Color] = [Color("#28B8E8"), Color("#FF657D"), Color("#8BCF45"), Color("#FFA940")]
 const BUTTON_COLORS: Array[Color] = [Color("#FF657D"), Color("#28B8E8"), Color("#FFD34E"), Color("#43C99A")]
 const BUTTON_LABELS: Array[String] = ["R", "B", "Y", "G"]
+const BLOCK_SHAPES := [
+	[Vector2i(0,0)],
+	[Vector2i(0,0),Vector2i(1,0),Vector2i(0,1),Vector2i(1,1)],
+	[Vector2i(0,0),Vector2i(1,0),Vector2i(2,0)],
+	[Vector2i(0,0),Vector2i(0,1),Vector2i(0,2)],
+	[Vector2i(0,0),Vector2i(1,0),Vector2i(2,0),Vector2i(1,1)],
+	[Vector2i(0,0),Vector2i(0,1),Vector2i(1,1),Vector2i(2,1)],
+	[Vector2i(0,0),Vector2i(1,0),Vector2i(1,1),Vector2i(2,1)],
+	[Vector2i(0,0),Vector2i(1,0),Vector2i(2,0),Vector2i(3,0)],
+	[Vector2i(0,0),Vector2i(0,1),Vector2i(0,2),Vector2i(1,2)],
+	[Vector2i(1,0),Vector2i(0,1),Vector2i(1,1),Vector2i(2,1)]
+]
 const GAMES: Array[Dictionary] = [
 	{"id":"tap_sprint","title":"TAP SPRINT","category":"SPEED","description":"Mash the button. Own the leaderboard.","color":Color("#29B8E8"),"duration":10},
 	{"id":"reflex_rush","title":"REFLEX RUSH","category":"REACTION","description":"Wait for GO. Don't jump the gun.","color":Color("#FF667F"),"duration":0},
 	{"id":"memory_grid","title":"MEMORY GRID","category":"BRAIN","description":"Remember the order. Repeat it perfectly.","color":Color("#9875EF"),"duration":0},
 	{"id":"mini_racers","title":"MINI RACERS","category":"RACING","description":"Hold to drive. Use nitro to reach the finish.","color":Color("#FFAA45"),"duration":12},
 	{"id":"dodge_arena","title":"DODGE ARENA","category":"SURVIVAL","description":"Dodge on the signal. Last player wins.","color":Color("#46C99B"),"duration":0},
-	{"id":"target_rush","title":"TARGET RUSH","category":"ACCURACY","description":"Hit the matching color before time runs out.","color":Color("#F07CC3"),"duration":12}
+	{"id":"target_rush","title":"TARGET RUSH","category":"ACCURACY","description":"Hit the matching color before time runs out.","color":Color("#F07CC3"),"duration":12},
+	{"id":"block_battle","title":"BLOCK BATTLE","category":"PUZZLE","description":"Place shapes. Clear lines. Beat every score.","color":Color("#4D8DFF"),"duration":35},
+	{"id":"orb_dash","title":"ORB DASH","category":"MOVEMENT","description":"Use your control stick. Grab gems. Chase the lead.","color":Color("#7D65F2"),"duration":30}
 ]
 
 var screen_name := "home"
@@ -48,6 +62,11 @@ var last_winner := ""
 var wiggle := 0.0
 var race_mouse_player := -1
 var race_touch_players: Dictionary = {}
+var orb_mouse_player := -1
+var orb_touch_players: Dictionary = {}
+var active_block_player := 0
+var selected_block_piece := 0
+var orb_target := Vector2(640.0, 300.0)
 
 func _ready() -> void:
 	randomize()
@@ -162,7 +181,7 @@ func _draw_home() -> void:
 	_txt("Pick your players, choose a challenge,", 72, 454, 15, Color("#E3E0FF"))
 	_txt("and settle the score — no Wi-Fi needed.", 72, 478, 15, Color("#E3E0FF"))
 	_rr(Rect2(72, 530, 160, 76), Color("#FFFFFF18"), 17)
-	_txt("06", 91, 563, 26, YELLOW)
+	_txt("08", 91, 563, 26, YELLOW)
 	_txt("MINI-GAMES", 92, 587, 11, WHITE)
 	_rr(Rect2(245, 530, 160, 76), Color("#FFFFFF18"), 17)
 	_txt("1–4", 264, 563, 26, YELLOW)
@@ -254,6 +273,17 @@ func _draw_game_icon(id: String, center: Vector2, col: Color) -> void:
 			draw_circle(center, 29, col)
 			draw_circle(center, 18, WHITE)
 			draw_circle(center, 8, YELLOW)
+		"block_battle":
+			for r in range(3):
+				for c in range(3):
+					if (r + c) % 2 == 0 or (r == 1 and c == 1):
+						_rr(Rect2(center.x - 48 + c * 34, center.y - 46 + r * 34, 29, 29), PLAYER_COLORS[(r + c) % PLAYER_COLORS.size()], 6)
+		"orb_dash":
+			draw_circle(center, 38, Color("#FFFFFF"))
+			draw_circle(center, 29, col)
+			draw_circle(center + Vector2(-8, -9), 9, Color("#FFFFFF99"))
+			draw_circle(center + Vector2(45, -27), 8, YELLOW)
+			draw_circle(center + Vector2(-42, 25), 6, PLAYER_COLORS[0])
 
 func _draw_game() -> void:
 	var data := _get_game_data(current_game)
@@ -422,7 +452,7 @@ func _home_start_rect() -> Rect2:
 	return Rect2(795.0, 451.0, 417.0, 78.0)
 
 func _select_game_rect(i: int) -> Rect2:
-	return Rect2(38.0 + float(i % 3) * 402.0, 137.0 + float(int(i / 3)) * 240.0, 386.0, 222.0)
+	return Rect2(38.0 + float(i % 4) * 303.0, 137.0 + float(int(i / 4)) * 236.0, 280.0, 218.0)
 
 func _select_tournament_rect() -> Rect2:
 	return Rect2(975.0, 45.0, 267.0, 55.0)
