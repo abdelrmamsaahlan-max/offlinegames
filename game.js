@@ -562,6 +562,16 @@
       if (score) score.textContent = miniScore(p, game.id);
       if (game.id === "mini_racers") updateRaceTrack();
     });
+    if (game.id === "tap_sprint") {
+      const count = document.getElementById("arena-count");
+      if (count) count.textContent = game.players.reduce(function (sum, p) { return sum + p.taps; }, 0) + " TAPS";
+    }
+    if (game.id === "block_battle") {
+      const player = game.players[game.activePuzzlePlayer];
+      const score = document.getElementById("block-score-live"), lines = document.getElementById("block-lines-live");
+      if (score) score.textContent = "SCORE " + player.blockScore;
+      if (lines) lines.textContent = player.blockLines + " LINES CLEARED";
+    }
   }
   function updateRaceTrack() {
     if (!game || game.id !== "mini_racers") return;
@@ -595,6 +605,8 @@
       if (game.id === "mini_racers") return p.progress;
       if (game.id === "dodge_arena") return p.hits * 2 - p.misses;
       if (game.id === "target_rush") return p.hits * 2 - p.misses;
+      if (game.id === "block_battle") return p.blockScore;
+      if (game.id === "orb_dash") return p.hits * 10;
       return 0;
     });
   }
@@ -609,12 +621,16 @@
     if (id === "reflex_rush") return p.reaction === null ? "Too slow" : (p.reaction < 0 ? "False start" : p.reaction + " ms");
     if (id === "memory_grid") return p.memoryScore + " / " + (game ? game.sequence.length : 5) + " remembered";
     if (id === "mini_racers") return Math.round(p.progress) + " m raced · " + p.boosts + " boosts";
+    if (id === "block_battle") return p.blockScore + " points · " + p.blockLines + " lines cleared";
+    if (id === "orb_dash") return p.hits * 10 + " gem points";
     if (id === "dodge_arena") return p.hits + " dodges · " + p.misses + " missed";
     return p.hits + " hits · " + p.misses + " misses";
   }
   function miniScore(p, id) {
     if (id === "tap_sprint") return p.taps + " taps";
     if (id === "mini_racers") return Math.round(p.raceSpeed) + " speed · " + Math.round(p.progress) + " m";
+    if (id === "block_battle") return p.blockScore + " points · " + p.blockLines + " lines";
+    if (id === "orb_dash") return p.hits * 10 + " points";
     if (id === "reflex_rush") return p.reaction !== null && p.reaction >= 0 ? p.reaction + " ms" : p.status;
     if (id === "memory_grid") return p.memoryScore + " matched";
     if (id === "dodge_arena") return p.hits + " dodges";
@@ -623,6 +639,7 @@
   function finishRound() {
     if (!game || currentScreen !== "game") return;
     stopTick();
+    joystickPointerOwners.clear(); racePointerOwners.clear();
     const scores = resultScores();
     game.players.forEach(function (p, i) { p.score = scores[i]; });
     const ranks = rankPlayers(scores);
@@ -686,12 +703,33 @@
         '<path d="M735 12 V248" stroke="#fff" stroke-width="6" stroke-dasharray="8 5"/>' +
         '<text x="40" y="30" font-size="10" font-weight="900" fill="#fff">START</text><text x="700" y="30" font-size="10" font-weight="900" fill="#fff">FINISH</text>' +
         cars + '</svg></div>';
+    } else if (id === "block_battle") {
+      const player = game.players[game.activePuzzlePlayer];
+      const boardCells = player.board.map(function (value, index) {
+        const row = Math.floor(index / 8), col = index % 8;
+        const filled = value === null ? "" : " filled";
+        const bgStyle = value === null ? "" : ' style="--block-color:' + colors[value] + '"';
+        return '<button class="block-cell' + filled + '"' + bgStyle + ' data-action="block-place" data-row="' + row + '" data-col="' + col + '" aria-label="Row ' + (row + 1) + ', column ' + (col + 1) + '"></button>';
+      }).join("");
+      const tray = player.blockPieces.map(function (piece, index) {
+        const maxX = Math.max.apply(null, piece.cells.map(function (c) { return c[0]; })) + 1;
+        const maxY = Math.max.apply(null, piece.cells.map(function (c) { return c[1]; })) + 1;
+        const spans = piece.cells.map(function (cell) {
+          return '<span style="grid-column:' + (cell[0] + 1) + ';grid-row:' + (cell[1] + 1) + ';--block-color:' + colors[piece.colorIndex] + '"></span>';
+        }).join("");
+        return '<button class="block-piece-button' + (piece.used ? " used" : (game.selectedPiece === index ? " chosen" : "")) + '" data-action="block-piece" data-piece="' + index + '"' + (piece.used ? " disabled" : "") + '><span class="piece-caption">' + (piece.used ? "PLACED" : (game.selectedPiece === index ? "SELECTED" : "SHAPE " + (index + 1))) + '</span><span class="piece-preview" style="grid-template-columns:repeat(' + maxX + ',20px);grid-template-rows:repeat(' + maxY + ',20px)">' + spans + '</span></button>';
+      }).join("");
+      html = '<div class="block-game-layout"><div class="block-game-intro"><span class="block-kicker">BLOCK BATTLE · PLAYER ' + (game.activePuzzlePlayer + 1) + '</span><strong>Place shapes. Clear lines. Chase the high score.</strong><span>Choose a piece, then tap a spot on the board. Full rows and columns clear together.</span></div><div class="block-game-main"><div class="block-board" role="grid" aria-label="8 by 8 block puzzle board">' + boardCells + '</div><div class="block-piece-tray">' + tray + '</div></div><div class="block-game-footer"><span id="block-score-live">SCORE ' + player.blockScore + '</span><span id="block-lines-live">' + player.blockLines + ' LINES CLEARED</span><span>PASS DEVICE AFTER YOUR TURN</span></div></div>';
+    } else if (id === "orb_dash") {
+      const orbs = game.players.map(function (p, i) { return '<span class="orb-player" id="orb-player-' + i + '" style="--orb-color:' + colors[i] + ';left:' + p.orbX + '%;top:' + p.orbY + '%"><span>' + (i + 1) + '</span></span>'; }).join("");
+      html = '<div class="orb-dash-layout"><div class="orb-dash-heading"><div><span class="orb-kicker">ORBIT ARENA</span><strong>Grab the gems!</strong><small>Move with your joystick. Every gem is worth 10 points.</small></div><span class="orb-leader" id="orb-leader">P1 LEADS · 0 PTS</span></div><div class="orb-arena-field" id="orb-arena-field"><span class="orb-gem" id="orb-gem" style="left:' + game.orbTarget.x + '%;top:' + game.orbTarget.y + '%">✦</span>' + orbs + '</div><div class="orb-arena-note">Keep moving, collect the gold gem, and beat your friends to the next one.</div></div>';
     } else if (id === "dodge_arena") {
       html = '<div class="arena-big" style="color:' + (game.phase === "dodge_live" ? "#168e64" : "#dba23a") + '">' + (game.phase === "dodge_live" ? "DODGE!" : "READY?") + '</div><h2>' + (game.phase === "dodge_live" ? "TAP BEFORE THE WAVE HITS" : "WAIT FOR THE SIGNAL") + '</h2><p>WAVE ' + game.wave + ' / 8 · One chance per wave.</p><div class="arena-symbols">' + (game.phase === "dodge_live" ? "⚡ 🌀 ⚡" : "◌ ◌ ◌") + '</div>';
     } else {
       html = '<div class="arena-big">MATCH THIS!</div><h2>COLOR TARGET</h2><p>Tap the same color in your panel.</p><div class="arena-grid"><span class="arena-tile" id="target-display" style="width:65px;height:65px;font-weight:1000;display:grid;place-items:center;background:' + colors[game.target] + ';color:' + (game.target === 2 ? ink : "#fff") + '">' + ["R","B","Y","G"][game.target] + '</span></div><p style="margin-top:10px;font-weight:1000;color:' + game.data.color + '" id="target-label">' + ["RED","BLUE","YELLOW","GREEN"][game.target] + '</p>';
     }
-    return '<div class="arena' + (id === "mini_racers" ? " racing-arena" : "") + '" style="--arena-bg:' + bg + ';--arena-dot:' + game.data.color + '"><div class="arena-pattern"></div><div class="arena-center">' + html + '</div></div>';
+    const arenaClass = id === "mini_racers" ? " racing-arena" : (id === "block_battle" ? " block-arena" : (id === "orb_dash" ? " orb-arena" : ""));
+    return '<div class="arena' + arenaClass + '" style="--arena-bg:' + bg + ';--arena-dot:' + game.data.color + '"><div class="arena-pattern"></div><div class="arena-center">' + html + '</div></div>';
   }
   function renderGame() {
     currentScreen = "game";
@@ -701,16 +739,19 @@
     root.innerHTML = '<div class="game-shell">' +
       '<div class="game-top"><button class="back-button" data-action="game-menu">← GAMES</button><div class="game-heading"><h1>' + g.title + '</h1><p>' + (game.tournament ? "TOURNAMENT · ROUND " + game.round + " / " + tournament.rounds : "QUICK PLAY · " + g.category) + '</p></div><div class="game-top-right">' + (isTimed ? '<span class="timer-chip" id="timer-value">' + fmtTime(game.timeLeft) + '</span>' : '<button class="sound-chip" data-action="sound">♫ SOUND</button>') + '</div></div>' +
       '<div class="game-board">' + renderArenaContent() +
-      '<div class="player-grid">' + game.players.map(function (p, i) {
+      '<div class="player-grid ' + (game.id === "block_battle" ? "block-score-panels" : (game.id === "orb_dash" ? "orb-player-panels" : "")) + '">' + game.players.map(function (p, i) {
         const activeMemory = game.id === "memory_grid" && game.phase === "memory_input" && game.memoryPlayer === i;
+        const activePuzzle = game.id === "block_battle" && game.activePuzzlePlayer === i;
         const disabledMemory = game.id === "memory_grid" && !activeMemory;
-        return '<section class="player-panel ' + (activeMemory ? "active-turn" : "") + '" style="--player-color:' + colors[i] + ';--player-soft:' + softColors[i] + ';--player-border:' + colors[i] + '55">' +
-          '<div class="player-id"><div class="player-badge"><i class="player-dot"></i>' + playerName(i) + '</div><div class="player-status" id="player-status-' + i + '">' + escapeText(p.status) + '</div><div class="player-points" id="player-mini-score-' + i + '">' + miniScore(p, game.id) + (game.tournament ? " · TOUR " + tournament.scores[i] + " PTS" : "") + '</div></div>' +
-          ((game.id === "memory_grid" || game.id === "target_rush") ?
-            '<div class="color-actions">' + colors.map(function (c, ci) { return '<button class="color-button" data-action="color" data-player="' + i + '" data-color="' + ci + '" style="background:' + c + ';color:' + (ci === 2 ? ink : "#fff") + '" ' + (disabledMemory ? "disabled" : "") + '>' + ["R","B","Y","G"][ci] + '</button>'; }).join("") + '</div>' :
-            '<button class="action-button ' + (i === 2 ? "soft-text" : "") + '" data-action="player" data-player="' + i + '">' + (game.id === "tap_sprint" ? "TAP FAST!" : game.id === "mini_racers" ? "HOLD TO DRIVE" : game.id === "dodge_arena" ? "DODGE NOW!" : "TAP ON GO!") + '</button>') +
+        return '<section class="player-panel ' + ((activeMemory || activePuzzle) ? "active-turn" : "") + '" style="--player-color:' + colors[i] + ';--player-soft:' + softColors[i] + ';--player-border:' + colors[i] + '55">' +
+          '<div class="player-id"><div class="player-badge"><i class="player-dot"></i>' + playerName(i) + (activePuzzle ? ' <span class="active-tag">YOUR TURN</span>' : '') + '</div><div class="player-status" id="player-status-' + i + '">' + escapeText(p.status) + '</div><div class="player-points" id="player-mini-score-' + i + '">' + miniScore(p, game.id) + (game.tournament ? " · TOUR " + tournament.scores[i] + " PTS" : "") + '</div></div>' +
+          (game.id === "block_battle" ? '<div class="puzzle-player-badge">' + (activePuzzle ? "PUZZLE PLAYER" : "UP NEXT") + '</div>' :
+            (game.id === "orb_dash" ? '<button class="joystick-control" data-action="joystick" data-player="' + i + '" aria-label="Move ' + playerName(i) + '"><span class="joystick-ring"></span><span class="joystick-knob"></span><span class="joystick-hint">MOVE</span></button>' :
+            ((game.id === "memory_grid" || game.id === "target_rush") ?
+              '<div class="color-actions">' + colors.map(function (c, ci) { return '<button class="color-button" data-action="color" data-player="' + i + '" data-color="' + ci + '" style="background:' + c + ';color:' + (ci === 2 ? ink : "#fff") + '" ' + (disabledMemory ? "disabled" : "") + '>' + ["R","B","Y","G"][ci] + '</button>'; }).join("") + '</div>' :
+              '<button class="action-button ' + (i === 2 ? "soft-text" : "") + '" data-action="player" data-player="' + i + '">' + (game.id === "tap_sprint" ? "TAP FAST!" : game.id === "mini_racers" ? "HOLD TO DRIVE" : game.id === "dodge_arena" ? "DODGE NOW!" : "TAP ON GO!") + '</button>'))) +
         '</section>';
-      }).join("") + '</div><div class="game-tip">' + (game.id === "memory_grid" ? "Pass the phone: each player gets a turn to repeat the sequence." : (game.id === "mini_racers" ? "HOLD your lane button to accelerate. Tap for a nitro boost. First across the finish line wins!" : "Everybody plays on one screen. Tap only your own player panel.")) + '</div></div></div>';
+      }).join("") + '</div><div class="game-tip">' + (game.id === "memory_grid" ? "Pass the phone: each player gets a turn to repeat the sequence." : (game.id === "mini_racers" ? "HOLD your lane button to accelerate. Tap for a nitro boost. First across the finish line wins!" : (game.id === "block_battle" ? "Take turns with your own puzzle board. Clear complete rows and columns to earn bonus points." : (game.id === "orb_dash" ? "Drag your player joystick to move in any direction. Collect ✦ gems for 10 points each." : "Everybody plays on one screen. Tap only your own player panel.")))) + '</div></div></div>';
     if (game.id === "reflex_rush" && game.phase === "reflex_go") {
       game.startedGoAt = performance.now();
     }
@@ -757,6 +798,10 @@
     if (action === "players") { settings.players = Number(el.dataset.value); saveSettings(); renderHome(); }
     else if (action === "rounds") { settings.rounds = Number(el.dataset.value); saveSettings(); renderHome(); }
     else if (action === "play") renderGameSelect();
+    else if (action === "block-piece") {
+      if (game && game.id === "block_battle") { game.selectedPiece = Number(el.dataset.piece); renderGame(); }
+    }
+    else if (action === "block-place") placeBlockPiece(Number(el.dataset.row), Number(el.dataset.col));
     else if (action === "quick-play") startQuickGame(el.dataset.game);
     else if (action === "start-tournament") startTournament();
     else if (action === "home") { stopTick(); game = null; renderHome(); }
@@ -771,7 +816,19 @@
     else if (action === "sound") { settings.sound = !settings.sound; saveSettings(); updateSoundButton(); toast(settings.sound ? "Sound on" : "Sound off"); }
   }
   const racePointerOwners = new Map();
+  const joystickPointerOwners = new Map();
   root.addEventListener("pointerdown", function (event) {
+    const stick = event.target.closest('[data-action="joystick"]');
+    if (stick && root.contains(stick) && currentScreen === "game" && game && game.id === "orb_dash") {
+      const playerIndex = Number(stick.dataset.player);
+      if (game.players[playerIndex]) {
+        joystickPointerOwners.set(event.pointerId, { playerIndex: playerIndex, button: stick });
+        setJoystickValue(playerIndex, stick, event);
+        event.preventDefault();
+        if (stick.setPointerCapture) { try { stick.setPointerCapture(event.pointerId); } catch (e) {} }
+      }
+      return;
+    }
     const button = event.target.closest('[data-action="player"]');
     if (!button || !root.contains(button) || currentScreen !== "game" || !game || game.id !== "mini_racers") return;
     const playerIndex = Number(button.dataset.player);
@@ -781,6 +838,14 @@
     player.throttle = true;
     button.classList.add("racing-active");
   });
+  document.addEventListener("pointermove", function (event) {
+    const owner = joystickPointerOwners.get(event.pointerId);
+    if (!owner) return;
+    setJoystickValue(owner.playerIndex, owner.button, event);
+    event.preventDefault();
+  }, { passive: false });
+  document.addEventListener("pointerup", function (event) { releaseJoystick(event.pointerId); });
+  document.addEventListener("pointercancel", function (event) { releaseJoystick(event.pointerId); });
   function releaseRacePointer(event) {
     if (!racePointerOwners.has(event.pointerId)) return;
     const playerIndex = racePointerOwners.get(event.pointerId);
@@ -798,7 +863,7 @@
     const button = event.target.closest("[data-action]");
     if (!button || !root.contains(button)) return;
     const action = button.dataset.action;
-    if (action === "player" || action === "color") event.preventDefault();
+    if (action === "player" || action === "color" || action === "joystick" || action === "block-place" || action === "block-piece") event.preventDefault();
     handleAction(action, button);
   });
   document.getElementById("sound-toggle").addEventListener("click", function () {
