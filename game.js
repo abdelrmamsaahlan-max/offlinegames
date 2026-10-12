@@ -147,7 +147,7 @@
 
   function newPlayer() {
     return {
-      taps: 0, reaction: null, responded: false, progress: 0, raceSpeed: 0, throttle: false, boosts: 0,
+      taps: 0, comboBonus: 0, reaction: null, responded: false, progress: 0, raceSpeed: 0, throttle: false, boosts: 0,
       hits: 0, misses: 0, early: false, dodged: false, status: "READY",
       memoryInput: 0, memoryScore: 0, done: false, score: 0,
       board: Array(64).fill(null), blockPieces: [], blockScore: 0, blockLines: 0,
@@ -305,7 +305,7 @@
       players: Array.from({ length: settings.players }, newPlayer),
       duration: duration, timeLeft: duration, phase: "playing", phaseTimer: 0,
       startedAt: performance.now(), target: Math.floor(Math.random() * 4), targetCooldown: 0.65,
-      sequence: Array.from({ length: 5 }, function () { return Math.floor(Math.random() * 4); }),
+      sequence: Array.from({ length: settings.players >= 3 ? 6 : 5 }, function () { return Math.floor(Math.random() * 4); }),
       showIndex: -1, memoryPlayer: 0, wave: 1, nextSoundAt: 0,
       activePuzzlePlayer: 0, selectedPiece: 0, orbTarget: { x: 50, y: 50 }
     };
@@ -383,7 +383,7 @@
       if (game.id === "target_rush") {
         game.targetCooldown -= dt;
         if (game.targetCooldown <= 0) {
-          game.targetCooldown = 0.65;
+          game.targetCooldown = Math.max(0.32, 0.72 - (game.duration - game.timeLeft) * 0.025);
           game.target = Math.floor(Math.random() * 4);
           updateTargetDisplay();
         }
@@ -463,7 +463,7 @@
       game.phaseTimer -= dt;
       if (game.phase === "dodge_ready" && game.phaseTimer <= 0) {
         game.phase = "dodge_live";
-        game.phaseTimer = 0.72;
+        game.phaseTimer = Math.max(0.36, 0.72 - (game.wave - 1) * 0.045);
         game.players.forEach(function (p) {
           p.dodged = false;
           p.status = "DODGE NOW!";
@@ -495,8 +495,14 @@
     const p = game.players[pIndex];
     if (game.id === "tap_sprint" && game.timeLeft > 0) {
       p.taps++;
-      p.status = p.taps + " TAPS";
-      beep(380 + Math.min(400, p.taps * 3), 0.025, "triangle");
+      if (p.taps % 5 === 0) {
+        p.comboBonus++;
+        p.status = "COMBO x" + p.comboBonus + "! +" + p.comboBonus + " BONUS";
+        beep(650 + Math.min(360, p.comboBonus * 40), 0.075, "triangle");
+      } else {
+        p.status = p.taps + " TAPS · " + (5 - p.taps % 5) + " TO COMBO";
+        beep(380 + Math.min(400, p.taps * 3), 0.025, "triangle");
+      }
     } else if (game.id === "mini_racers" && game.timeLeft > 0 && p.progress < 615) {
       p.boosts++;
       p.raceSpeed = Math.min(88, p.raceSpeed + 18);
@@ -611,7 +617,7 @@
   }
   function resultScores() {
     return game.players.map(function (p) {
-      if (game.id === "tap_sprint") return p.taps;
+      if (game.id === "tap_sprint") return p.taps + p.comboBonus;
       if (game.id === "reflex_rush") return p.reaction === null ? -2000 : (p.reaction < 0 ? -1000 : 10000 - p.reaction);
       if (game.id === "memory_grid") return p.memoryScore;
       if (game.id === "mini_racers") return p.progress;
@@ -629,7 +635,7 @@
     });
   }
   function scoreText(p, id) {
-    if (id === "tap_sprint") return p.taps + " taps";
+    if (id === "tap_sprint") return p.taps + " taps · " + p.comboBonus + " combo bonus";
     if (id === "reflex_rush") return p.reaction === null ? "Too slow" : (p.reaction < 0 ? "False start" : p.reaction + " ms");
     if (id === "memory_grid") return p.memoryScore + " / " + (game ? game.sequence.length : 5) + " remembered";
     if (id === "mini_racers") return Math.round(p.progress) + " m raced · " + p.boosts + " boosts";
@@ -639,7 +645,7 @@
     return p.hits + " hits · " + p.misses + " misses";
   }
   function miniScore(p, id) {
-    if (id === "tap_sprint") return p.taps + " taps";
+    if (id === "tap_sprint") return p.taps + " taps · " + p.comboBonus + " bonus";
     if (id === "mini_racers") return Math.round(p.raceSpeed) + " speed · " + Math.round(p.progress) + " m";
     if (id === "block_battle") return p.blockScore + " points · " + p.blockLines + " lines";
     if (id === "orb_dash") return p.hits * 10 + " points";
@@ -748,8 +754,10 @@
     if (!game) { renderHome(); return; }
     const g = game.data;
     const isTimed = game.timeLeft !== null;
+    const tournamentRibbon = game.tournament && tournament ? '<div class="tournament-ribbon"><span class="tournament-ribbon-label">TOURNAMENT · ROUND ' + game.round + ' / ' + tournament.rounds + '</span>' + game.players.map(function (p, i) { return '<span class="tournament-ribbon-score" style="--ribbon-color:' + colors[i] + '">P' + (i + 1) + ' <b>' + tournament.scores[i] + '</b></span>'; }).join('') + '</div>' : '';
     root.innerHTML = '<div class="game-shell">' +
       '<div class="game-top"><button class="back-button" data-action="game-menu">← GAMES</button><div class="game-heading"><h1>' + g.title + '</h1><p>' + (game.tournament ? "TOURNAMENT · ROUND " + game.round + " / " + tournament.rounds : "QUICK PLAY · " + g.category) + '</p></div><div class="game-top-right">' + (isTimed ? '<span class="timer-chip" id="timer-value">' + fmtTime(game.timeLeft) + '</span>' : '<button class="sound-chip" data-action="sound">♫ SOUND</button>') + '</div></div>' +
+      tournamentRibbon +
       '<div class="game-board">' + renderArenaContent() +
       '<div class="player-grid ' + (game.id === "block_battle" ? "block-score-panels" : (game.id === "orb_dash" ? "orb-player-panels" : "")) + '">' + game.players.map(function (p, i) {
         const activeMemory = game.id === "memory_grid" && game.phase === "memory_input" && game.memoryPlayer === i;
