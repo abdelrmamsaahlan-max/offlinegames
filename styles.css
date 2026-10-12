@@ -7,3 +7,51 @@
 @media(max-width:760px){.topbar{padding:0 15px;height:76px}.brand-mark{width:42px;height:42px}.brand-copy strong{font-size:20px}.brand-copy small{font-size:8px;letter-spacing:.8px}.offline-pill{font-size:9px;padding:9px 10px}.topbar-right{gap:7px}.shell{padding:5px 14px 24px}.home-top{grid-template-columns:1fr}.hero-card{min-height:275px;padding:26px 24px}.hero-card h1{font-size:45px;max-width:380px}.hero-spark{right:25px;top:24px;width:70px;height:70px}.hero-card p{max-width:370px}.hero-bottom{margin-top:19px}.settings-card{padding:21px 20px}.control-block{margin-top:19px}.setup-bottom{grid-template-columns:1fr auto}.primary-button{width:auto;padding:15px 16px}.library-head{margin-top:27px}.game-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.game-card{padding:8px;border-radius:18px}.game-art{height:100px;border-radius:13px}.game-card-top{margin:11px 2px 6px}.game-card h3{margin-left:2px;margin-right:2px;font-size:13px}.game-card p{margin-left:2px;margin-right:2px;min-height:41px}.game-card-footer{padding:0 2px 2px}.play-link{font-size:10px}.game-meta{font-size:8px}.site-footer{padding:17px 15px 20px}.game-shell{padding:4px 12px 26px}.game-top{grid-template-columns:85px 1fr 66px;gap:7px}.back-button{padding:12px 9px;font-size:10px}.game-heading h1{font-size:19px}.game-heading p{font-size:9px}.sound-chip{padding:12px 8px;font-size:10px}.game-board{padding:10px;border-radius:21px}.arena{height:210px;border-radius:16px}.arena-center h2{font-size:22px}.arena-symbols{font-size:43px;letter-spacing:4px}.player-grid{gap:7px;margin-top:9px}.player-panel{grid-template-columns:1fr;gap:8px;padding:8px;border-radius:14px}.player-id{padding:3px 4px}.player-badge{font-size:10px}.player-status{font-size:9px;margin-top:5px;min-height:12px}.player-points{margin-top:4px}.action-button{min-height:54px;font-size:12px}.color-button{min-height:45px}.result-wrap{margin:12px auto 25px;padding:0 10px}.result-card{padding:14px;border-radius:22px}.result-banner{padding:18px 12px}.result-banner h1{font-size:26px}.result-row{grid-template-columns:34px minmax(0,1fr) auto;gap:7px;padding:10px}.rank-pill{height:32px;width:32px}.result-player{font-size:11px}.result-score{font-size:11px}.points-badge{grid-column:2 / 4;justify-self:start;padding:5px 8px}.result-actions{flex-wrap:wrap}.result-actions button{flex:1}.site-footer{font-size:8px;letter-spacing:.5px}.footer-right{font-size:9px}}
 @media(max-width:410px){.topbar{padding:0 10px}.brand{gap:8px}.brand-mark{width:36px;height:36px}.brand-copy strong{font-size:18px}.brand-copy small{font-size:7px}.offline-pill{font-size:8px;padding:8px}.icon-button{height:35px;width:35px}.shell{padding-left:10px;padding-right:10px}.hero-card{padding:24px 18px}.hero-card h1{font-size:39px}.settings-card{padding:18px 14px}.choice-row{gap:6px}.choice-button{height:44px}.choice-button.round{font-size:10px}.setup-bottom{grid-template-columns:1fr}.primary-button{width:100%}.game-card p{font-size:9px}.game-meta{letter-spacing:0}.play-link span{width:21px;height:21px}.game-top{grid-template-columns:70px 1fr 55px}.back-button{padding:11px 5px}.sound-chip{padding:11px 5px;font-size:9px}.arena{height:190px}.result-banner h1{font-size:23px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* Pocket Party refresh: clear setup -> game selection flow */
+.home-footnote{display:flex;align-items:center;justify-content:center;gap:10px;margin:22px 0 4px;color:#99a2b5;font-size:10px;font-weight:900;letter-spacing:1.05px}
+.home-footnote span{color:var(--purple)}
+.game-select-shell{padding-top:14px}
+.selection-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:22px;margin:8px 2px 22px}
+.selection-heading .eyebrow{color:var(--purple)}
+.selection-heading h1{font-size:clamp(30px,4vw,43px);letter-spacing:-1.8px;margin:8px 0 5px}
+.selection-heading p{font-size:13px;color:var(--muted);margin:0}
+.selection-heading .secondary-button{flex-shrink:0}
+.game-select-shell .game-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:17px}
+.game-select-shell .game-card{padding:13px;border-radius:23px}
+.game-select-shell .game-art{height:137px}
+.game-select-shell .game-card h3{font-size:17px}
+.game-select-shell .game-card p{font-size:12px;min-height:34px}
+.game-select-shell .play-link{font-size:10px;letter-spacing:.3px}
+.tournament-launch{display:flex;align-items:center;gap:16px;margin:22px 0 5px;padding:20px 22px;background:linear-gradient(100deg,#f0edff,#fff9d9);border:1px solid #e7e2ff;border-radius:22px}
+.tournament-icon{display:grid;place-items:center;flex:0 0 54px;height:54px;border-radius:16px;background:#fff;font-size:27px;box-shadow:0 5px 15px rgba(59,47,120,.08)}
+.tournament-copy{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+.tournament-copy strong{font-size:15px;letter-spacing:-.3px}
+.tournament-copy span{font-size:12px;line-height:1.45;color:var(--muted)}
+.tournament-launch .primary-button{flex-shrink:0}
+.race-scene{width:min(860px,100%);margin:0 auto;text-align:left;position:relative;z-index:1}
+.race-scene-hud{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#fff;margin:0 4px 9px;font-size:10px;font-weight:1000;letter-spacing:.6px;text-transform:uppercase}
+.race-scene-hud span:first-child{color:#ffe16b}
+.race-track{display:block;width:100%;height:auto;max-height:250px;border-radius:16px;overflow:hidden;box-shadow:0 9px 20px rgba(25,38,60,.16)}
+.player-panel .action-button[data-action="player"]{touch-action:none;user-select:none;-webkit-user-select:none}
+.player-panel .action-button.racing-active{filter:brightness(1.12);transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb,var(--player-color),#16223c 16%);outline:3px solid rgba(255,255,255,.85);outline-offset:-6px}
+@media(max-width:900px){
+ .game-select-shell .game-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .game-select-shell .game-art{height:115px}
+ .selection-heading h1{font-size:34px}
+}
+@media(max-width:600px){
+ .selection-heading{align-items:flex-start;flex-direction:column;margin-top:5px;gap:13px}
+ .selection-heading h1{font-size:31px}
+ .game-select-shell .game-grid{gap:10px}
+ .game-select-shell .game-card{padding:8px;border-radius:18px}
+ .game-select-shell .game-art{height:93px}
+ .game-select-shell .game-card h3{font-size:13px}
+ .game-select-shell .game-card p{font-size:10px;min-height:45px}
+ .tournament-launch{align-items:flex-start;flex-wrap:wrap;padding:15px;gap:11px}
+ .tournament-copy{flex-basis:calc(100% - 70px)}
+ .tournament-launch .primary-button{width:100%}
+ .home-footnote{font-size:8px;letter-spacing:.5px;flex-wrap:wrap}
+ .race-scene-hud{font-size:8px;letter-spacing:.2px}
+ .race-track{min-height:145px}
+}
