@@ -188,7 +188,7 @@ func _draw_home() -> void:
 	_center("CHOOSE A MINI-GAME NEXT", 795, 509, 417, 11, INK)
 	_txt("%d PLAYER%s READY" % [player_count, "" if player_count == 1 else "S"], 795, 562, 13, INK)
 	_txt("Quick play or a random tournament.", 795, 585, 12, MUTED)
-	_txt("SOUND CONTROLS ARE IN THE TOP BAR", 795, 622, 10, MUTED)
+	_txt("YOUR SETTINGS ARE SAVED ON THIS DEVICE", 795, 622, 10, MUTED)
 
 func _draw_select() -> void:
 	_rr(Rect2(38, 28, 1204, 90), WHITE, 26)
@@ -311,11 +311,11 @@ func _draw_game_stage() -> void:
 				for dash_x in range(110, 1160, 42):
 					_rr(Rect2(dash_x, divider_lane_y - 1.5, 19, 3), Color("#7A8499"), 1)
 			for start_y in range(190, 425, 24):
-				_rr(Rect2(151, start_y, 5, 13), YELLOW, 2)
+				_rr(Rect2(160, start_y, 5, 13), YELLOW, 2)
 			for finish_y in range(180, 435, 18):
-				_rr(Rect2(1080, finish_y, 8, 9), WHITE if int(finish_y / 18) % 2 == 0 else INK, 1)
+				_rr(Rect2(1100, finish_y, 8, 9), WHITE if int(finish_y / 18) % 2 == 0 else INK, 1)
 			_txt("START", 121, 201, 10, YELLOW)
-			_txt("FINISH", 1050, 201, 10, WHITE)
+			_txt("FINISH", 1070, 201, 10, WHITE)
 			for p in range(player_count):
 				var car_lane_y := 174.0 + 266.0 * (float(p) + 0.5) / float(player_count)
 				var car_x := 160.0 + float(player_data[p]["progress"])
