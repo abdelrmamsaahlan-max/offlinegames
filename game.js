@@ -11,7 +11,7 @@
     { id: "tap_sprint", title: "Tap Sprint", category: "SPEED", desc: "Mash the button. Own the leaderboard.", color: "#2eb8e8", soft: "#dff6fd", length: "10 SEC" },
     { id: "reflex_rush", title: "Reflex Rush", category: "REACTION", desc: "Wait for GO. Don't jump the gun.", color: "#ff6c84", soft: "#ffeaee", length: "ONE SHOT" },
     { id: "memory_grid", title: "Memory Grid", category: "BRAIN", desc: "Remember the pattern. Repeat it perfectly.", color: "#9875ef", soft: "#f0eaff", length: "TURN BASED" },
-    { id: "mini_racers", title: "Mini Racers", category: "RACING", desc: "Tap for speed. Beat them to the finish.", color: "#ffad4d", soft: "#fff0dd", length: "12 SEC" },
+    { id: "mini_racers", title: "Mini Racers", category: "RACING", desc: "Hold to drive. Use nitro to reach the finish.", color: "#ffad4d", soft: "#fff0dd", length: "12 SEC" },
     { id: "dodge_arena", title: "Dodge Arena", category: "SURVIVAL", desc: "Dodge on the signal. Last player wins.", color: "#47c995", soft: "#e1f8ed", length: "8 WAVES" },
     { id: "target_rush", title: "Target Rush", category: "ACCURACY", desc: "Hit the matching color before time runs out.", color: "#ed7ac4", soft: "#fdeafa", length: "12 SEC" }
   ];
