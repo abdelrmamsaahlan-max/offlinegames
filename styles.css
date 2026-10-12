@@ -55,3 +55,13 @@
  .race-scene-hud{font-size:8px;letter-spacing:.2px}
  .race-track{min-height:145px}
 }
+
+.racing-arena{height:285px;overflow:hidden}
+.racing-arena .arena-center{padding:8px}
+.racing-arena .arena-pattern{opacity:.05;background-size:26px 26px}
+.race-track{height:225px}
+@media(max-width:760px){
+ .racing-arena{height:250px}
+ .racing-arena .arena-center{padding:6px}
+ .race-track{height:185px}
+}
