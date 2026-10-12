@@ -785,6 +785,25 @@ func _game_tap(pos: Vector2) -> void:
 	if Rect2(24, 24, 122, 48).has_point(pos):
 		_go_to_select()
 		return
+	if current_game == "block_battle":
+		var pieces: Array = player_data[active_block_player]["block_pieces"]
+		for i in range(pieces.size()):
+			if _block_piece_rect(i).has_point(pos):
+				if not bool(pieces[i]["used"]):
+					selected_block_piece = i
+				queue_redraw()
+				return
+		for row in range(8):
+			for col in range(8):
+				if _block_cell_rect(row, col).has_point(pos):
+					_place_block_piece(row, col)
+					return
+		return
+	if current_game == "orb_dash":
+		var orb_player := _orb_player_at(pos)
+		if orb_player >= 0:
+			_update_orb_joystick(orb_player, pos)
+			return
 	if pos.y < 520.0:
 		return
 	for p in range(player_count):
@@ -908,6 +927,8 @@ func _go_home() -> void:
 	phase = "idle"
 	race_mouse_player = -1
 	race_touch_players.clear()
+	orb_mouse_player = -1
+	orb_touch_players.clear()
 	_save_local_save()
 	queue_redraw()
 
@@ -916,6 +937,8 @@ func _go_to_select() -> void:
 	phase = "idle"
 	race_mouse_player = -1
 	race_touch_players.clear()
+	orb_mouse_player = -1
+	orb_touch_players.clear()
 	queue_redraw()
 
 func _tick_game(delta: float) -> void:
@@ -1133,6 +1156,13 @@ func _award_points(scores: Array) -> void:
 func _finish_round() -> void:
 	if screen_name != "game":
 		return
+	race_mouse_player = -1
+	race_touch_players.clear()
+	orb_mouse_player = -1
+	orb_touch_players.clear()
+	for p in range(player_data.size()):
+		player_data[p]["throttle"] = false
+		player_data[p]["joystick"] = Vector2.ZERO
 	screen_name = "result"
 	result_scores = _raw_scores()
 	_award_points(result_scores)
