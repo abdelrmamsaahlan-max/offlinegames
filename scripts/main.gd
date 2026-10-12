@@ -320,7 +320,7 @@ func _draw_game() -> void:
 	_draw_game_stage()
 	for p in range(player_count):
 		_draw_player_panel(p)
-	if game_time_left > 0.0 and current_game in ["tap_sprint", "mini_racers", "target_rush"]:
+	if game_time_left > 0.0 and current_game in ["tap_sprint", "mini_racers", "target_rush", "block_battle", "orb_dash"]:
 		_rr(Rect2(548, 126, 184, 44), Color("#F0F2FB"), 14)
 		_center("%.1f SEC" % game_time_left, 548, 154, 184, 15, PURPLE)
 
@@ -388,6 +388,51 @@ func _draw_game_stage() -> void:
 			draw_circle(center, 53, col)
 			_center(BUTTON_LABELS[target_index], center.x - 40, center.y + 15, 80, 38, WHITE)
 			_center("MATCH THE COLOR ON YOUR PANEL", 260, 410, 760, 16, MUTED)
+		"block_battle":
+			var board: Array = player_data[active_block_player]["block_board"]
+			var board_rect := Rect2(350, 150, 325, 318)
+			_rr(board_rect, Color("#202D49"), 16)
+			_center("PLAYER %d · %d PTS" % [active_block_player + 1, int(player_data[active_block_player]["block_score"])], 350, 145, 325, 12, PURPLE)
+			for row in range(8):
+				for col in range(8):
+					var rect := _block_cell_rect(row, col)
+					var value := int(board[row * 8 + col])
+					_rr(rect, PLAYER_COLORS[value] if value >= 0 else Color("#34425F"), 4)
+					if value >= 0:
+						_rr(Rect2(rect.position.x + 4, rect.position.y + 3, rect.size.x - 8, 4), Color("#FFFFFF66"), 2)
+			_center("SELECT A SHAPE, THEN TAP THE BOARD", 700, 190, 500, 14, MUTED)
+			var pieces: Array = player_data[active_block_player]["block_pieces"]
+			for i in range(pieces.size()):
+				var piece: Dictionary = pieces[i]
+				var rect := _block_piece_rect(i)
+				var chosen := i == selected_block_piece
+				_rr(rect, Color("#F0EDFF") if chosen else WHITE, 15)
+				draw_rect(rect, PURPLE if chosen else Color("#E2E7F2"), false, 2.0)
+				_center("SELECTED" if chosen else ("PLACED" if bool(piece["used"]) else "SHAPE %d" % (i + 1)), rect.position.x, rect.position.y + 20, rect.size.x, 10, PURPLE if chosen else MUTED)
+				if not bool(piece["used"]):
+					var cells: Array = piece["cells"]
+					var color_index := int(piece["color_index"])
+					for cell in cells:
+						var cell_pos := rect.position + Vector2(24 + cell.x * 19, 44 + cell.y * 19)
+						_rr(Rect2(cell_pos, Vector2(16, 16)), PLAYER_COLORS[color_index], 4)
+			_center("Rows/columns = BONUS POINTS", 700, 435, 500, 13, Color("#16895B"))
+		"orb_dash":
+			_rr(Rect2(90, 154, 1100, 300), Color("#202B47"), 24)
+			for i in range(36):
+				var star_x := 110.0 + float((i * 97) % 1055)
+				var star_y := 173.0 + float((i * 53) % 258)
+				draw_circle(Vector2(star_x, star_y), 1.6 if i % 3 == 0 else 1.0, Color("#FFFFFF44"))
+			_center("COLLECT THE GOLD GEM · 10 POINTS EACH", 330, 145, 620, 13, PURPLE)
+			draw_circle(orb_target, 22, Color("#FFE16B44"))
+			draw_circle(orb_target, 13, YELLOW)
+			draw_circle(orb_target + Vector2(-3, -4), 4, WHITE)
+			for p in range(player_count):
+				var pos: Vector2 = player_data[p]["orb_pos"]
+				draw_circle(pos + Vector2(0, 5), 18, Color("#11182766"))
+				draw_circle(pos, 17, WHITE)
+				draw_circle(pos, 13, PLAYER_COLORS[p])
+				draw_circle(pos + Vector2(-4, -5), 4, Color("#FFFFFFCC"))
+				_center(str(p + 1), pos.x - 9, pos.y + 5, 18, 11, INK)
 
 func _draw_race_car(player: int, position: Vector2, car_color: Color) -> void:
 	# Chunky top-down car, with a windshield, number plate, headlights and animated wheel placement.
@@ -408,7 +453,14 @@ func _draw_player_panel(p: int) -> void:
 	_rr(Rect2(rect.position.x + 6, rect.position.y + 6, rect.size.x - 12, 39), col, 12)
 	_txt("PLAYER %d" % (p + 1), rect.position.x + 15, rect.position.y + 31, 14, WHITE)
 	_txt(str(player_status[p]), rect.position.x + 15, rect.position.y + 62, 11, INK)
-	if current_game in ["memory_grid", "target_rush"]:
+	if current_game == "block_battle":
+		var data: Dictionary = player_data[p]
+		_txt("%d POINTS · %d LINES" % [int(data["block_score"]), int(data["block_lines"])], rect.position.x + 15, rect.position.y + 86, 10, MUTED)
+		_rr(Rect2(rect.position.x + 10, rect.position.y + 99, rect.size.x - 20, 31), Color("#FFFFFF99"), 10)
+		_center("YOUR PUZZLE" if p == active_block_player else "UP NEXT", rect.position.x + 10, rect.position.y + 119, rect.size.x - 20, 10, PURPLE if p == active_block_player else MUTED)
+	elif current_game == "orb_dash":
+		_draw_joystick(p)
+	elif current_game in ["memory_grid", "target_rush"]:
 		for c in range(4):
 			var button := _color_action_rect(p, c)
 			_rr(button, BUTTON_COLORS[c], 10)
@@ -423,6 +475,19 @@ func _draw_player_panel(p: int) -> void:
 		_center(label, button.position.x, button.position.y + 36, button.size.x, 18, INK)
 	if tournament_active:
 		_txt("TOUR: %d PTS" % tournament_scores[p], rect.position.x + 15, rect.position.y + rect.size.y - 8, 10, MUTED)
+
+func _draw_joystick(player: int) -> void:
+	var center := _joystick_center(player)
+	var stick: Vector2 = player_data[player]["joystick"]
+	_draw_joystick_art(center, stick)
+
+func _draw_joystick_art(center: Vector2, stick: Vector2) -> void:
+	draw_circle(center, 38, Color("#D9E0F1"))
+	draw_circle(center, 31, Color("#F8FAFF"))
+	draw_arc(center, 22, 0.0, TAU, 36, Color("#98A5C2"), 1.5, true)
+	draw_circle(center + stick * 19.0, 15, PURPLE)
+	draw_circle(center + stick * 19.0 + Vector2(-3, -4), 4, Color("#FFFFFFAA"))
+	_center("MOVE", center.x - 23, center.y + 53, 46, 8, MUTED)
 
 func _draw_result() -> void:
 	_rr(Rect2(245, 44, 790, 620), WHITE, 30)
@@ -475,6 +540,12 @@ func _home_round_rect(i: int) -> Rect2:
 
 func _home_start_rect() -> Rect2:
 	return Rect2(795.0, 451.0, 417.0, 78.0)
+
+func _block_cell_rect(row: int, col: int) -> Rect2:
+	return Rect2(362.0 + float(col) * 38.0, 160.0 + float(row) * 38.0, 35.0, 35.0)
+
+func _block_piece_rect(index: int) -> Rect2:
+	return Rect2(705.0 + float(index) * 166.0, 255.0, 150.0, 132.0)
 
 func _select_game_rect(i: int) -> Rect2:
 	return Rect2(38.0 + float(i % 4) * 303.0, 137.0 + float(int(i / 4)) * 236.0, 280.0, 218.0)
