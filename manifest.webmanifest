@@ -1,0 +1,17 @@
+{
+  "name": "Pocket Party",
+  "short_name": "Pocket Party",
+  "description": "Quick local party mini-games for 1–4 players",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f6fc",
+  "theme_color": "#f4f6fc",
+  "icons": [
+    {
+      "src": "/assets/pocket_party_icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
