@@ -164,3 +164,13 @@ body{background:radial-gradient(ellipse at 2% 7%,rgba(90,74,232,.10),transparent
 .block-piece-button,.block-cell{touch-action:none;-webkit-user-select:none;user-select:none}
 .block-piece-button.dragging{opacity:.86;transform:scale(1.04);border-color:var(--purple);box-shadow:0 14px 28px rgba(66,51,196,.18)}
 .block-cell:active{transform:scale(.95)}
+
+.tournament-ribbon{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;margin:-3px 0 12px;padding:8px 12px;border:1px solid #e1e5f6;background:rgba(255,255,255,.84);border-radius:14px;box-shadow:0 4px 13px rgba(35,45,78,.035)}
+.tournament-ribbon-label{font-size:9px;letter-spacing:.8px;font-weight:1000;color:#5a4ae8;padding:0 7px}
+.tournament-ribbon-score{font-size:10px;font-weight:900;color:#67728c;background:#f4f6fc;border:1px solid #e8ebf5;border-radius:8px;padding:5px 8px}
+.tournament-ribbon-score b{color:var(--ribbon-color);font-size:12px}
+@media(max-width:600px){
+ .tournament-ribbon{gap:5px;padding:7px;margin-bottom:9px}
+ .tournament-ribbon-label{width:100%;text-align:center;font-size:8px}
+ .tournament-ribbon-score{font-size:9px;padding:4px 7px}
+}
