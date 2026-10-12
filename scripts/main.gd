@@ -547,6 +547,132 @@ func _block_cell_rect(row: int, col: int) -> Rect2:
 func _block_piece_rect(index: int) -> Rect2:
 	return Rect2(705.0 + float(index) * 166.0, 255.0, 150.0, 132.0)
 
+func _make_block_pieces() -> Array:
+	var pieces: Array = []
+	for i in range(3):
+		var shape_index := randi_range(0, BLOCK_SHAPES.size() - 1)
+		pieces.append({"cells": BLOCK_SHAPES[shape_index].duplicate(), "color_index": randi_range(0, 3), "used": false})
+	return pieces
+
+func _block_piece_fits(board: Array, piece: Dictionary, col: int, row: int) -> bool:
+	for offset in piece["cells"]:
+		var x := col + offset.x
+		var y := row + offset.y
+		if x < 0 or x >= 8 or y < 0 or y >= 8 or int(board[y * 8 + x]) >= 0:
+			return false
+	return true
+
+func _block_player_has_move(player: Dictionary) -> bool:
+	var board: Array = player["block_board"]
+	var pieces: Array = player["block_pieces"]
+	for piece_value in pieces:
+		var piece: Dictionary = piece_value
+		if bool(piece["used"]):
+			continue
+		for row in range(8):
+			for col in range(8):
+				if _block_piece_fits(board, piece, col, row):
+					return true
+	return false
+
+func _advance_block_player() -> void:
+	active_block_player += 1
+	if active_block_player >= player_count:
+		_finish_round()
+		return
+	var player: Dictionary = player_data[active_block_player]
+	var pieces: Array = player["block_pieces"]
+	selected_block_piece = 0
+	for i in range(pieces.size()):
+		if not bool(pieces[i]["used"]):
+			selected_block_piece = i
+			break
+	game_time_left = 35.0
+	player_status[active_block_player] = "YOUR TURN — MAKE IT COUNT!"
+	queue_redraw()
+
+func _place_block_piece(row: int, col: int) -> void:
+	if current_game != "block_battle" or active_block_player < 0 or active_block_player >= player_data.size():
+		return
+	var player: Dictionary = player_data[active_block_player]
+	var pieces: Array = player["block_pieces"]
+	if selected_block_piece < 0 or selected_block_piece >= pieces.size():
+		return
+	var piece: Dictionary = pieces[selected_block_piece]
+	if bool(piece["used"]) or not _block_piece_fits(player["block_board"], piece, col, row):
+		return
+	var board: Array = player["block_board"]
+	var offsets: Array = piece["cells"]
+	for offset in offsets:
+		board[(row + offset.y) * 8 + col + offset.x] = int(piece["color_index"])
+	player["block_board"] = board
+	player["block_score"] = int(player["block_score"]) + offsets.size()
+	piece["used"] = true
+	pieces[selected_block_piece] = piece
+	var full_rows: Array[int] = []
+	var full_cols: Array[int] = []
+	for y in range(8):
+		var full := true
+		for x in range(8):
+			if int(board[y * 8 + x]) < 0:
+				full = false
+				break
+		if full:
+			full_rows.append(y)
+	for x in range(8):
+		var full := true
+		for y in range(8):
+			if int(board[y * 8 + x]) < 0:
+				full = false
+				break
+		if full:
+			full_cols.append(x)
+	if not full_rows.is_empty() or not full_cols.is_empty():
+		var cleared: Dictionary = {}
+		for y in full_rows:
+			for x in range(8):
+				cleared[y * 8 + x] = true
+		for x in full_cols:
+			for y in range(8):
+				cleared[y * 8 + x] = true
+		for index in cleared.keys():
+			board[int(index)] = -1
+		var lines := full_rows.size() + full_cols.size()
+		player["block_lines"] = int(player["block_lines"]) + lines
+		player["block_score"] = int(player["block_score"]) + lines * 10 + maxi(0, lines - 1) * 5
+		player_status[active_block_player] = "COMBO! +%d" % (lines * 10 + maxi(0, lines - 1) * 5)
+	else:
+		player_status[active_block_player] = "+%d BLOCKS" % offsets.size()
+	player["block_board"] = board
+	player["block_pieces"] = pieces
+	player_data[active_block_player] = player
+	if pieces.all(func(item): return bool(item["used"])):
+		player["block_pieces"] = _make_block_pieces()
+		player_data[active_block_player] = player
+		selected_block_piece = 0
+	else:
+		for i in range(pieces.size()):
+			if not bool(pieces[i]["used"]):
+				selected_block_piece = i
+				break
+	if not _block_player_has_move(player_data[active_block_player]):
+		player_status[active_block_player] = "NO MOVES LEFT"
+		_advance_block_player()
+	queue_redraw()
+
+func _spawn_orb_target() -> Vector2:
+	var candidate := Vector2(640.0, 300.0)
+	for attempt in range(20):
+		candidate = Vector2(randf_range(125.0, 1150.0), randf_range(180.0, 425.0))
+		var safe := true
+		for player in player_data:
+			if candidate.distance_to(player["orb_pos"]) < 85.0:
+				safe = false
+				break
+		if safe:
+			return candidate
+	return candidate
+
 func _select_game_rect(i: int) -> Rect2:
 	return Rect2(38.0 + float(i % 4) * 303.0, 137.0 + float(int(i / 4)) * 236.0, 280.0, 218.0)
 
@@ -725,6 +851,8 @@ func _start_game(game_id: String) -> void:
 	current_game = game_id
 	race_mouse_player = -1
 	race_touch_players.clear()
+	orb_mouse_player = -1
+	orb_touch_players.clear()
 	screen_name = "game"
 	game_elapsed = 0.0
 	game_time_left = 10.0
@@ -736,11 +864,18 @@ func _start_game(game_id: String) -> void:
 	for j in range(4):
 		memory_sequence.append(randi_range(0, 3))
 	active_memory_player = 0
+	active_block_player = 0
+	selected_block_piece = 0
 	dodge_wave = 0
 	player_data.clear()
 	player_status.clear()
+	var orb_starts: Array = [Vector2(230, 220), Vector2(1050, 220), Vector2(230, 410), Vector2(1050, 410)]
 	for p in range(player_count):
-		player_data.append({"taps":0,"reaction_ms":-1,"responded":false,"progress":0.0,"speed":0.0,"throttle":false,"hits":0,"misses":0,"acted":false,"raw":0.0,"input_index":0,"done":false})
+		var board: Array = []
+		for i in range(64):
+			board.append(-1)
+		var data: Dictionary = {"taps":0,"reaction_ms":-1,"responded":false,"progress":0.0,"speed":0.0,"throttle":false,"hits":0,"misses":0,"acted":false,"raw":0.0,"input_index":0,"done":false,"block_board":board,"block_pieces":_make_block_pieces(),"block_score":0,"block_lines":0,"orb_pos":orb_starts[p],"joystick":Vector2.ZERO}
+		player_data.append(data)
 		player_status.append("READY")
 	match current_game:
 		"tap_sprint":
@@ -760,6 +895,12 @@ func _start_game(game_id: String) -> void:
 		"dodge_arena":
 			phase = "dodge_ready"
 			phase_timer = randf_range(0.8, 1.5)
+		"block_battle":
+			game_time_left = 35.0
+			player_status[0] = "YOUR TURN — MAKE IT COUNT!"
+		"orb_dash":
+			game_time_left = 30.0
+			orb_target = _spawn_orb_target()
 	_save_local_save()
 
 func _go_home() -> void:
@@ -782,6 +923,27 @@ func _tick_game(delta: float) -> void:
 	match current_game:
 		"tap_sprint":
 			game_time_left = maxf(0.0, game_time_left - delta)
+			if game_time_left <= 0.0:
+				_finish_round()
+		"block_battle":
+			game_time_left = maxf(0.0, game_time_left - delta)
+			if game_time_left <= 0.0:
+				_advance_block_player()
+		"orb_dash":
+			game_time_left = maxf(0.0, game_time_left - delta)
+			for p in range(player_count):
+				var position: Vector2 = player_data[p]["orb_pos"]
+				var stick: Vector2 = player_data[p]["joystick"]
+				position += stick * 230.0 * delta
+				position.x = clampf(position.x, 115.0, 1165.0)
+				position.y = clampf(position.y, 178.0, 430.0)
+				player_data[p]["orb_pos"] = position
+				if position.distance_to(orb_target) < 25.0:
+					player_data[p]["hits"] = int(player_data[p]["hits"]) + 1
+					player_status[p] = "GEM +10 · %d PTS" % (int(player_data[p]["hits"]) * 10)
+					orb_target = _spawn_orb_target()
+				elif stick.length() > 0.08:
+					player_status[p] = "MOVING · %d PTS" % (int(player_data[p]["hits"]) * 10)
 			if game_time_left <= 0.0:
 				_finish_round()
 		"mini_racers":
@@ -951,6 +1113,8 @@ func _raw_scores() -> Array[float]:
 			"mini_racers": value = float(data["progress"])
 			"dodge_arena": value = float(int(data["hits"]) * 2 - int(data["misses"]))
 			"target_rush": value = float(int(data["hits"]) * 2 - int(data["misses"]))
+		"block_battle": value = float(data["block_score"])
+		"orb_dash": value = float(int(data["hits"]) * 10)
 		scores.append(value)
 	return scores
 
@@ -1002,6 +1166,8 @@ func _score_label(p: int) -> String:
 		"mini_racers": return "%d m raced" % int(data.get("progress", 0))
 		"dodge_arena": return "%d successful dodges" % int(data.get("hits", 0))
 		"target_rush": return "%d hits · %d misses" % [int(data.get("hits", 0)), int(data.get("misses", 0))]
+		"block_battle": return "%d points · %d lines cleared" % [int(data.get("block_score", 0)), int(data.get("block_lines", 0))]
+		"orb_dash": return "%d gem points" % (int(data.get("hits", 0)) * 10)
 	return "Finished"
 
 func _save_local_save() -> void:
