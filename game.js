@@ -154,6 +154,17 @@
       orbX: 50, orbY: 50, joystickX: 0, joystickY: 0
     };
   }
+  function spawnOrbTarget() {
+    let candidate = { x: 50, y: 50 };
+    for (let attempt = 0; attempt < 24; attempt++) {
+      candidate = { x: 8 + Math.random() * 84, y: 12 + Math.random() * 76 };
+      const safe = !game || !game.players || game.players.every(function (p) {
+        return Math.hypot(p.orbX - candidate.x, p.orbY - candidate.y) > 12;
+      });
+      if (safe) return candidate;
+    }
+    return candidate;
+  }
   function makeBlockPieces() {
     return Array.from({ length: 3 }, function () {
       return { cells: BLOCK_SHAPES[Math.floor(Math.random() * BLOCK_SHAPES.length)].map(function (cell) { return [cell[0], cell[1]]; }), colorIndex: Math.floor(Math.random() * colors.length), used: false };
@@ -308,7 +319,7 @@
       game.timeLeft = duration;
     }
     if (id === "orb_dash") {
-      game.orbTarget = { x: 24 + Math.random() * 52, y: 20 + Math.random() * 60 };
+      game.orbTarget = spawnOrbTarget();
       game.timeLeft = duration;
     }
     if (id === "reflex_rush") {
@@ -394,7 +405,7 @@
         if (Math.hypot(dx, dy) < 5.2) {
           p.hits++;
           p.status = "GEM +10 · " + (p.hits * 10) + " PTS";
-          game.orbTarget = { x: 8 + Math.random() * 84, y: 12 + Math.random() * 76 };
+          game.orbTarget = spawnOrbTarget();
           beep(780 + i * 45, 0.07, "sine");
         } else if (Math.abs(p.joystickX) + Math.abs(p.joystickY) > 0.2) {
           p.status = "MOVING · " + (p.hits * 10) + " PTS";
@@ -858,7 +869,8 @@
   document.addEventListener("pointerup", function (event) {
     releaseJoystick(event.pointerId);
     if (activeBlockDrag && activeBlockDrag.pointerId === event.pointerId) {
-      const cell = event.target.closest('[data-action="block-place"]');
+      const target = event.target;
+      const cell = target && typeof target.closest === "function" ? target.closest('[data-action="block-place"]') : null;
       if (cell && currentScreen === "game" && game && game.id === "block_battle") {
         game.selectedPiece = activeBlockDrag.pieceIndex;
         placeBlockPiece(Number(cell.dataset.row), Number(cell.dataset.col));
