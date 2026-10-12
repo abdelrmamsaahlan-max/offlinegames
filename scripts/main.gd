@@ -946,7 +946,7 @@ func _start_game(game_id: String) -> void:
 		var board: Array = []
 		for i in range(64):
 			board.append(-1)
-		var data: Dictionary = {"taps":0,"reaction_ms":-1,"responded":false,"progress":0.0,"speed":0.0,"throttle":false,"hits":0,"misses":0,"acted":false,"raw":0.0,"input_index":0,"done":false,"block_board":board,"block_pieces":_make_block_pieces(),"block_score":0,"block_lines":0,"orb_pos":orb_starts[p],"joystick":Vector2.ZERO}
+		var data: Dictionary = {"taps":0,"combo_bonus":0,"reaction_ms":-1,"responded":false,"progress":0.0,"speed":0.0,"throttle":false,"hits":0,"misses":0,"acted":false,"raw":0.0,"input_index":0,"done":false,"block_board":board,"block_pieces":_make_block_pieces(),"block_score":0,"block_lines":0,"orb_pos":orb_starts[p],"joystick":Vector2.ZERO}
 		player_data.append(data)
 		player_status.append("READY")
 	match current_game:
@@ -1052,7 +1052,7 @@ func _tick_game(delta: float) -> void:
 			phase_timer -= delta
 			if phase_timer <= 0.0:
 				target_index = randi_range(0, 3)
-				phase_timer = 0.72
+				phase_timer = maxf(0.35, 0.72 - (12.0 - game_time_left) * 0.025)
 			if game_time_left <= 0.0:
 				_finish_round()
 		"reflex_rush":
@@ -1100,7 +1100,7 @@ func _tick_game(delta: float) -> void:
 			phase_timer -= delta
 			if phase == "dodge_ready" and phase_timer <= 0.0:
 				phase = "dodge_live"
-				phase_timer = 0.65
+				phase_timer = maxf(0.34, 0.68 - float(dodge_wave) * 0.04)
 				for p in range(player_count):
 					player_data[p]["acted"] = false
 					player_status[p] = "DODGE!"
@@ -1126,7 +1126,11 @@ func _player_action(p: int) -> void:
 	match current_game:
 		"tap_sprint":
 			player_data[p]["taps"] = int(player_data[p]["taps"]) + 1
-			player_status[p] = "%d TAPS" % int(player_data[p]["taps"])
+			if int(player_data[p]["taps"]) % 5 == 0:
+				player_data[p]["combo_bonus"] = int(player_data[p]["combo_bonus"]) + 1
+				player_status[p] = "COMBO! +%d BONUS" % int(player_data[p]["combo_bonus"])
+			else:
+				player_status[p] = "%d TAPS · %d TO COMBO" % [int(player_data[p]["taps"]), 5 - (int(player_data[p]["taps"]) % 5)]
 		"mini_racers":
 			if float(player_data[p]["progress"]) < 862.0:
 				player_data[p]["speed"] = minf(88.0, float(player_data[p]["speed"]) + 18.0)
@@ -1194,7 +1198,7 @@ func _raw_scores() -> Array[float]:
 		var data: Dictionary = player_data[p]
 		var value := 0.0
 		match current_game:
-			"tap_sprint": value = float(data["taps"])
+			"tap_sprint": value = float(int(data["taps"]) + int(data["combo_bonus"]))
 			"reflex_rush": value = 10000.0 - float(data["reaction_ms"]) if int(data["reaction_ms"]) >= 0 else -1000.0
 			"memory_grid": value = float(data["raw"])
 			"mini_racers": value = float(data["progress"])
@@ -1254,7 +1258,7 @@ func _get_game_data(id: String) -> Dictionary:
 func _score_label(p: int) -> String:
 	var data: Dictionary = player_data[p] if p < player_data.size() else {}
 	match current_game:
-		"tap_sprint": return "%d taps" % int(data.get("taps", 0))
+		"tap_sprint": return "%d taps · %d combo bonus" % [int(data.get("taps", 0)), int(data.get("combo_bonus", 0))]
 		"reflex_rush": return ("%d ms" % int(data.get("reaction_ms", -1))) if int(data.get("reaction_ms", -1)) >= 0 else "False start / too slow"
 		"memory_grid": return "%d / %d remembered" % [int(data.get("raw", 0)), memory_sequence.size()]
 		"mini_racers": return "%d m raced" % int(data.get("progress", 0))
