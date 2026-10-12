@@ -234,9 +234,12 @@ func _draw_game_stage() -> void:
 			_center("WATCH THE PATTERN, THEN REPEAT IT", 150, 190, 980, 18, MUTED)
 			for c in range(4):
 				var rect := Rect2(490 + c * 76, 225, 60, 60)
-				_rr(rect, BUTTON_COLORS[memory_sequence[c]], 13)
 				if phase == "memory_show":
+					_rr(rect, BUTTON_COLORS[memory_sequence[c]], 13)
 					_center(str(c + 1), rect.position.x, rect.position.y + 39, rect.size.x, 19, WHITE)
+				else:
+					_rr(rect, Color("#E8ECF5"), 13)
+					_center("?", rect.position.x, rect.position.y + 39, rect.size.x, 22, MUTED)
 			_center("PLAYER %d'S TURN" % (active_memory_player + 1) if phase == "memory_input" else "MEMORIZE THE COLORS", 350, 340, 580, 19, PURPLE)
 		"mini_racers":
 			_center("TAP YOUR PANEL TO BOOST", 150, 190, 980, 18, MUTED)
