@@ -94,37 +94,47 @@
           '<div class="hero-spark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 2L60 37L96 50L60 62L50 98L39 62L4 50L39 37Z" fill="#ffe16b"/><circle cx="79" cy="18" r="7" fill="#ff7188"/><circle cx="20" cy="76" r="5" fill="#5ed0ed"/></svg></div>' +
           '<span class="eyebrow"><span class="star">✦</span> THE LIVING ROOM ARCADE</span>' +
           '<h1>One phone.<br><span>Four players.</span><br>Big chaos.</h1>' +
-          '<p>Six quick games, one-screen battles, and one champion. No accounts. No lobby. Just pass the phone and play.</p>' +
+          '<p>Pick your players, choose your challenge, and fight for the crown. Six mini-games, real-time action, and zero Wi-Fi required.</p>' +
           '<div class="hero-bottom"><div class="hero-stat"><strong>06</strong><small>Mini games</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>1–4</strong><small>Players</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>0</strong><small>Wi-Fi required</small></div></div>' +
         '</div>' +
         '<div class="settings-card">' +
-          '<div class="section-heading"><div><h2>Set up your party</h2><p>Choose your players. We’ll handle the chaos.</p></div><span class="step-mark">READY UP ✦</span></div>' +
+          '<div class="section-heading"><div><h2>Build your party</h2><p>Pass one device around or crowd around the screen.</p></div><span class="step-mark">STEP 01 / 02</span></div>' +
           '<div class="control-block"><div class="control-label">HOW MANY PLAYERS? <small>same device</small></div><div class="choice-row">' +
             [1,2,3,4].map(function (n) { return '<button class="choice-button ' + (settings.players === n ? "selected" : "") + '" data-action="players" data-value="' + n + '">' + n + '<span class="choice-sub">P' + n + '</span></button>'; }).join("") +
           '</div></div>' +
-          '<div class="control-block"><div class="control-label">TOURNAMENT LENGTH <small>more rounds = more drama</small></div><div class="choice-row">' +
+          '<div class="control-block"><div class="control-label">TOURNAMENT LENGTH <small>for tournament mode</small></div><div class="choice-row">' +
             [5,10].map(function (n) { return '<button class="choice-button round ' + (settings.rounds === n ? "selected" : "") + '" data-action="rounds" data-value="' + n + '">' + n + ' ROUNDS</button>'; }).join("") +
           '</div></div>' +
-          '<div class="setup-bottom"><div class="ready-note"><strong>' + settings.players + ' PLAYER' + (settings.players === 1 ? "" : "S") + ' · ' + settings.rounds + ' ROUNDS</strong><br>Random games. Automatic scoring. One winner.</div><button class="primary-button" data-action="start-tournament">START TOURNAMENT&nbsp; →</button></div>' +
+          '<div class="setup-bottom"><div class="ready-note"><strong>' + settings.players + ' PLAYER' + (settings.players === 1 ? "" : "S") + ' READY</strong><br>Quick games or a full random tournament.</div><button class="primary-button" data-action="play">PLAY&nbsp; →</button></div>' +
         '</div>' +
       '</section>' +
-      '<div class="library-head"><div><h2>Pick your game</h2><p>Easy to learn. Dangerous to your friendships.</p></div><span class="library-count">THE ARCADE &nbsp; / &nbsp; 06 GAMES</span></div>' +
-      '<section class="game-grid" aria-label="Mini games">' +
+      '<div class="home-footnote"><span>✦</span> MADE FOR LOCAL MULTIPLAYER <span>·</span> NO ACCOUNTS <span>·</span> JUST PLAY</div>' +
+    '</div>';
+    updateSoundButton();
+  }
+
+  function renderGameSelect() {
+    currentScreen = "select";
+    root.innerHTML = '<div class="shell game-select-shell">' +
+      '<div class="selection-heading"><div><span class="eyebrow"><span class="star">✦</span> STEP 02 / 02</span><h1>Choose your game.</h1><p>' + settings.players + ' player' + (settings.players === 1 ? "" : "s") + ' · Same device · Pick a game to start</p></div>' +
+      '<button class="secondary-button" data-action="home">← BACK TO SETUP</button></div>' +
+      '<section class="game-grid" aria-label="Choose a mini-game">' +
         gameList.map(function (g, i) {
           return '<button class="game-card" data-action="quick-play" data-game="' + g.id + '">' +
             '<div class="game-art">' + art(g.id) + '</div>' +
             '<div class="game-card-top"><span class="game-category">' + g.category + '</span><span class="game-number">0' + (i + 1) + '</span></div>' +
             '<h3>' + g.title + '</h3><p>' + g.desc + '</p>' +
-            '<div class="game-card-footer"><span class="game-meta">' + g.length + '</span><span class="play-link">PLAY NOW <span>↗</span></span></div>' +
+            '<div class="game-card-footer"><span class="game-meta">' + g.length + '</span><span class="play-link">PLAY GAME <span>↗</span></span></div>' +
           '</button>';
         }).join("") +
       '</section>' +
+      '<section class="tournament-launch"><div class="tournament-icon">🏆</div><div class="tournament-copy"><strong>Feeling competitive?</strong><span>Play ' + settings.rounds + ' random rounds, earn points, and crown one champion.</span></div><button class="primary-button" data-action="start-tournament">START TOURNAMENT&nbsp; →</button></section>' +
     '</div>';
     updateSoundButton();
   }
 
   function newPlayer() {
-    return { taps: 0, reaction: null, responded: false, progress: 0, hits: 0, misses: 0, early: false, dodged: false, status: "READY", memoryInput: 0, memoryScore: 0, done: false, score: 0 };
+    return { taps: 0, reaction: null, responded: false, progress: 0, raceSpeed: 0, throttle: false, boosts: 0, hits: 0, misses: 0, early: false, dodged: false, status: "READY", memoryInput: 0, memoryScore: 0, done: false, score: 0 };
   }
   function startTournament() {
     tournament = { active: true, round: 1, rounds: settings.rounds, scores: [0,0,0,0], recent: [] };
@@ -195,10 +205,22 @@
       const timer = document.getElementById("timer-value");
       if (timer) timer.textContent = fmtTime(game.timeLeft);
       if (game.id === "mini_racers") {
-        game.players.forEach(function (p, i) {
-          const fill = document.getElementById("race-fill-" + i);
-          if (fill) fill.style.width = Math.min(100, p.progress / 38 * 100) + "%";
+        let crossedFinish = false;
+        game.players.forEach(function (p) {
+          p.raceSpeed = p.throttle ? Math.min(88, p.raceSpeed + 112 * dt) : Math.max(0, p.raceSpeed - 145 * dt);
+          p.progress = Math.min(615, p.progress + p.raceSpeed * dt);
+          if (p.progress >= 615) {
+            p.status = "FINISH!";
+            crossedFinish = true;
+          } else if (p.throttle) {
+            p.status = "DRIVING · " + Math.round(p.raceSpeed) + " SPEED";
+          } else if (p.raceSpeed > 2) {
+            p.status = "COASTING · " + Math.round(p.raceSpeed) + " SPEED";
+          }
         });
+        updateRaceTrack();
+        refreshPlayerPanels();
+        if (crossedFinish) { finishRound(); return; }
       }
       if (game.id === "target_rush") {
         game.targetCooldown -= dt;
@@ -292,10 +314,12 @@
       p.taps++;
       p.status = p.taps + " TAPS";
       beep(380 + Math.min(400, p.taps * 3), 0.025, "triangle");
-    } else if (game.id === "mini_racers" && game.timeLeft > 0) {
-      p.progress++;
-      p.status = "BOOST! " + p.progress;
-      beep(210 + (pIndex * 75), 0.035, "sawtooth");
+    } else if (game.id === "mini_racers" && game.timeLeft > 0 && p.progress < 615) {
+      p.boosts++;
+      p.raceSpeed = Math.min(88, p.raceSpeed + 18);
+      p.status = "NITRO BOOST! " + p.boosts;
+      beep(210 + (pIndex * 75), 0.06, "sawtooth");
+      updateRaceTrack();
     } else if (game.id === "reflex_rush") {
       if (p.responded) return;
       p.responded = true;
@@ -365,12 +389,23 @@
       const score = document.getElementById("player-mini-score-" + i);
       if (status) status.textContent = p.status;
       if (score) score.textContent = miniScore(p, game.id);
-      if (game.id === "mini_racers") {
-        const fill = document.getElementById("race-fill-" + i);
-        if (fill) fill.style.width = Math.min(100, p.progress / 38 * 100) + "%";
-      }
+      if (game.id === "mini_racers") updateRaceTrack();
     });
   }
+  function updateRaceTrack() {
+    if (!game || game.id !== "mini_racers") return;
+    const laneHeight = 260 / settings.players;
+    game.players.forEach(function (p, i) {
+      const car = document.getElementById("race-car-" + i);
+      if (car) car.setAttribute("transform", "translate(" + (68 + p.progress) + " " + (laneHeight * (i + 0.5) - 15) + ")");
+    });
+    const hud = document.getElementById("race-hud-status");
+    if (hud) {
+      const leader = game.players.reduce(function(best, p, i, arr) { return p.progress > arr[best].progress ? i : best; }, 0);
+      hud.textContent = "P" + (leader + 1) + " LEADS · " + Math.round(game.players[leader].progress) + " m";
+    }
+  }
+
   function updateTargetDisplay() {
     const display = document.getElementById("target-display");
     const label = document.getElementById("target-label");
@@ -402,13 +437,13 @@
     if (id === "tap_sprint") return p.taps + " taps";
     if (id === "reflex_rush") return p.reaction === null ? "Too slow" : (p.reaction < 0 ? "False start" : p.reaction + " ms");
     if (id === "memory_grid") return p.memoryScore + " / " + (game ? game.sequence.length : 5) + " remembered";
-    if (id === "mini_racers") return p.progress + " boosts";
+    if (id === "mini_racers") return Math.round(p.progress) + " m raced · " + p.boosts + " boosts";
     if (id === "dodge_arena") return p.hits + " dodges · " + p.misses + " missed";
     return p.hits + " hits · " + p.misses + " misses";
   }
   function miniScore(p, id) {
     if (id === "tap_sprint") return p.taps + " taps";
-    if (id === "mini_racers") return p.progress + " boosts";
+    if (id === "mini_racers") return Math.round(p.raceSpeed) + " speed · " + Math.round(p.progress) + " m";
     if (id === "reflex_rush") return p.reaction !== null && p.reaction >= 0 ? p.reaction + " ms" : p.status;
     if (id === "memory_grid") return p.memoryScore + " matched";
     if (id === "dodge_arena") return p.hits + " dodges";
@@ -453,8 +488,33 @@
       }
       html = '<div class="arena-big">' + (game.phase === "memory_show" ? "WATCH!" : (game.phase === "memory_input" ? "YOUR TURN" : "NICE TRY")) + '</div><h2>' + (game.phase === "memory_show" ? "MEMORIZE THE PATTERN" : "REPEAT IT IN ORDER") + '</h2><p>Player ' + (game.memoryPlayer + 1) + " out of " + settings.players + '</p><div class="arena-grid">' + tiles + '</div>';
     } else if (id === "mini_racers") {
-      html = '<div class="arena-big">🏁 RACE!</div><h2>BOOST TO THE FINISH</h2><p>Every tap moves your racer forward.</p><div style="width:min(570px,95%);margin:15px auto 0">' +
-        game.players.map(function (p, i) { return '<div style="display:grid;grid-template-columns:35px 1fr;gap:8px;align-items:center;margin:6px 0"><b style="font-size:10px">P' + (i+1) + '</b><div class="arena-progress"><div class="arena-progress-fill" id="race-fill-' + i + '" style="width:' + Math.min(100, p.progress / 38 * 100) + '%;background:' + colors[i] + '"></div></div></div>'; }).join("") + '</div>';
+      const laneHeight = 260 / settings.players;
+      const dividers = Array.from({length: settings.players - 1}, function(_, i) {
+        const y = Math.round((i + 1) * laneHeight);
+        return '<path d="M8 ' + y + ' H790" stroke="#7D879B" stroke-width="2" stroke-dasharray="12 10" opacity=".7"/>';
+      }).join("");
+      const cars = game.players.map(function(p, i) {
+        const y = laneHeight * (i + 0.5) - 15;
+        return '<g id="race-car-' + i + '" transform="translate(' + (68 + p.progress) + ' ' + y + ')">' +
+          '<ellipse cx="28" cy="30" rx="27" ry="5" fill="#111827" opacity=".3"/>' +
+          '<rect x="3" y="8" width="51" height="19" rx="6" fill="' + colors[i] + '" stroke="#fff" stroke-width="1.5"/>' +
+          '<path d="M13 9 L20 1 H38 L46 9 Z" fill="' + colors[i] + '" stroke="#fff" stroke-width="1.5"/>' +
+          '<path d="M22 4 H35 L40 9 H18 Z" fill="#DDF7FF"/>' +
+          '<rect x="8" y="13" width="5" height="5" rx="2" fill="#fff"/><rect x="45" y="13" width="5" height="5" rx="2" fill="#fff"/>' +
+          '<circle cx="14" cy="27" r="6" fill="#141B2D" stroke="#D8DEEA" stroke-width="2"/><circle cx="44" cy="27" r="6" fill="#141B2D" stroke="#D8DEEA" stroke-width="2"/>' +
+          '<text x="28" y="22" font-size="10" text-anchor="middle" font-weight="900" fill="' + (i === 2 ? "#17233e" : "#fff") + '">' + (i + 1) + '</text></g>';
+      }).join("");
+      html = '<div class="race-scene"><div class="race-scene-hud"><span>🏁 FIRST TO THE LINE WINS</span><span id="race-hud-status">HOLD YOUR BUTTON TO ACCELERATE</span></div>' +
+        '<svg id="race-track" class="race-track" viewBox="0 0 800 260" role="img" aria-label="2D race track with moving player cars" preserveAspectRatio="none">' +
+        '<defs><linearGradient id="raceRoad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#28334B"/><stop offset="100%" stop-color="#1B2437"/></linearGradient><pattern id="raceGrass" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M0 18 L18 0" stroke="#6AB58A" stroke-width="2" opacity=".3"/></pattern></defs>' +
+        '<rect x="0" y="0" width="800" height="260" rx="16" fill="#BFE8CB"/><rect x="6" y="6" width="788" height="248" rx="14" fill="url(#raceGrass)"/>' +
+        '<rect x="18" y="10" width="764" height="240" rx="13" fill="url(#raceRoad)" stroke="#fff" stroke-width="3"/>' +
+        '<path d="M27 18 H773 M27 242 H773" stroke="#fff" stroke-width="3" opacity=".9"/>' +
+        dividers +
+        '<path d="M68 12 V248" stroke="#ffe16b" stroke-width="5" stroke-dasharray="8 6"/>' +
+        '<path d="M735 12 V248" stroke="#fff" stroke-width="6" stroke-dasharray="8 5"/>' +
+        '<text x="40" y="30" font-size="10" font-weight="900" fill="#fff">START</text><text x="700" y="30" font-size="10" font-weight="900" fill="#fff">FINISH</text>' +
+        cars + '</svg></div>';
     } else if (id === "dodge_arena") {
       html = '<div class="arena-big" style="color:' + (game.phase === "dodge_live" ? "#168e64" : "#dba23a") + '">' + (game.phase === "dodge_live" ? "DODGE!" : "READY?") + '</div><h2>' + (game.phase === "dodge_live" ? "TAP BEFORE THE WAVE HITS" : "WAIT FOR THE SIGNAL") + '</h2><p>WAVE ' + game.wave + ' / 8 · One chance per wave.</p><div class="arena-symbols">' + (game.phase === "dodge_live" ? "⚡ 🌀 ⚡" : "◌ ◌ ◌") + '</div>';
     } else {
@@ -468,7 +528,7 @@
     const g = game.data;
     const isTimed = game.timeLeft !== null;
     root.innerHTML = '<div class="game-shell">' +
-      '<div class="game-top"><button class="back-button" data-action="home">← ARCADE</button><div class="game-heading"><h1>' + g.title + '</h1><p>' + (game.tournament ? "TOURNAMENT · ROUND " + game.round + " / " + tournament.rounds : "QUICK PLAY · " + g.category) + '</p></div><div class="game-top-right">' + (isTimed ? '<span class="timer-chip" id="timer-value">' + fmtTime(game.timeLeft) + '</span>' : '<button class="sound-chip" data-action="sound">♫ SOUND</button>') + '</div></div>' +
+      '<div class="game-top"><button class="back-button" data-action="game-menu">← GAMES</button><div class="game-heading"><h1>' + g.title + '</h1><p>' + (game.tournament ? "TOURNAMENT · ROUND " + game.round + " / " + tournament.rounds : "QUICK PLAY · " + g.category) + '</p></div><div class="game-top-right">' + (isTimed ? '<span class="timer-chip" id="timer-value">' + fmtTime(game.timeLeft) + '</span>' : '<button class="sound-chip" data-action="sound">♫ SOUND</button>') + '</div></div>' +
       '<div class="game-board">' + renderArenaContent() +
       '<div class="player-grid">' + game.players.map(function (p, i) {
         const activeMemory = game.id === "memory_grid" && game.phase === "memory_input" && game.memoryPlayer === i;
@@ -477,9 +537,9 @@
           '<div class="player-id"><div class="player-badge"><i class="player-dot"></i>' + playerName(i) + '</div><div class="player-status" id="player-status-' + i + '">' + escapeText(p.status) + '</div><div class="player-points" id="player-mini-score-' + i + '">' + miniScore(p, game.id) + (game.tournament ? " · TOUR " + tournament.scores[i] + " PTS" : "") + '</div></div>' +
           ((game.id === "memory_grid" || game.id === "target_rush") ?
             '<div class="color-actions">' + colors.map(function (c, ci) { return '<button class="color-button" data-action="color" data-player="' + i + '" data-color="' + ci + '" style="background:' + c + ';color:' + (ci === 2 ? ink : "#fff") + '" ' + (disabledMemory ? "disabled" : "") + '>' + ["R","B","Y","G"][ci] + '</button>'; }).join("") + '</div>' :
-            '<button class="action-button ' + (i === 2 ? "soft-text" : "") + '" data-action="player" data-player="' + i + '">' + (game.id === "tap_sprint" ? "TAP FAST!" : game.id === "mini_racers" ? "BOOST!" : game.id === "dodge_arena" ? "DODGE NOW!" : "TAP ON GO!") + '</button>') +
+            '<button class="action-button ' + (i === 2 ? "soft-text" : "") + '" data-action="player" data-player="' + i + '">' + (game.id === "tap_sprint" ? "TAP FAST!" : game.id === "mini_racers" ? "HOLD TO DRIVE" : game.id === "dodge_arena" ? "DODGE NOW!" : "TAP ON GO!") + '</button>') +
         '</section>';
-      }).join("") + '</div><div class="game-tip">' + (game.id === "memory_grid" ? "Pass the phone: each player gets a turn to repeat the sequence." : "Everybody plays on one screen. Tap only your own player panel.") + '</div></div></div>';
+      }).join("") + '</div><div class="game-tip">' + (game.id === "memory_grid" ? "Pass the phone: each player gets a turn to repeat the sequence." : (game.id === "mini_racers" ? "HOLD your lane button to accelerate. Tap for a nitro boost. First across the finish line wins!" : "Everybody plays on one screen. Tap only your own player panel.")) + '</div></div></div>';
     if (game.id === "reflex_rush" && game.phase === "reflex_go") {
       game.startedGoAt = performance.now();
     }
@@ -498,7 +558,7 @@
       }).join("") +
       '<div class="result-actions">' +
         (game.tournament ? '<button class="primary-button" data-action="' + (finalRound ? "final" : "next-round") + '">' + (finalRound ? "SEE CHAMPION →" : "NEXT ROUND →") + '</button>' : '<button class="primary-button" data-action="rematch">REMATCH →</button>') +
-        '<button class="secondary-button" data-action="home">BACK TO ARCADE</button>' +
+        '<button class="secondary-button" data-action="game-menu">BACK TO GAMES</button>' +
       '</div></div></div>';
   }
   function renderFinal() {
@@ -525,9 +585,11 @@
   function handleAction(action, el) {
     if (action === "players") { settings.players = Number(el.dataset.value); saveSettings(); renderHome(); }
     else if (action === "rounds") { settings.rounds = Number(el.dataset.value); saveSettings(); renderHome(); }
+    else if (action === "play") renderGameSelect();
     else if (action === "quick-play") startQuickGame(el.dataset.game);
     else if (action === "start-tournament") startTournament();
     else if (action === "home") { stopTick(); game = null; renderHome(); }
+    else if (action === "game-menu") { stopTick(); game = null; renderGameSelect(); }
     else if (action === "player") playerAction(Number(el.dataset.player));
     else if (action === "color") colorAction(Number(el.dataset.player), Number(el.dataset.color));
     else if (action === "next-round") {
@@ -537,6 +599,30 @@
     else if (action === "rematch") startQuickGame(game.id);
     else if (action === "sound") { settings.sound = !settings.sound; saveSettings(); updateSoundButton(); toast(settings.sound ? "Sound on" : "Sound off"); }
   }
+  const racePointerOwners = new Map();
+  root.addEventListener("pointerdown", function (event) {
+    const button = event.target.closest('[data-action="player"]');
+    if (!button || !root.contains(button) || currentScreen !== "game" || !game || game.id !== "mini_racers") return;
+    const playerIndex = Number(button.dataset.player);
+    const player = game.players[playerIndex];
+    if (!player) return;
+    racePointerOwners.set(event.pointerId, playerIndex);
+    player.throttle = true;
+    button.classList.add("racing-active");
+  });
+  function releaseRacePointer(event) {
+    if (!racePointerOwners.has(event.pointerId)) return;
+    const playerIndex = racePointerOwners.get(event.pointerId);
+    racePointerOwners.delete(event.pointerId);
+    if (!game || game.id !== "mini_racers") return;
+    const stillHeld = Array.from(racePointerOwners.values()).includes(playerIndex);
+    if (game.players[playerIndex]) game.players[playerIndex].throttle = stillHeld;
+    const buttons = root.querySelectorAll('[data-action="player"][data-player="' + playerIndex + '"]');
+    buttons.forEach(function (button) { button.classList.toggle("racing-active", stillHeld); });
+  }
+  document.addEventListener("pointerup", releaseRacePointer);
+  document.addEventListener("pointercancel", releaseRacePointer);
+
   root.addEventListener("click", function (event) {
     const button = event.target.closest("[data-action]");
     if (!button || !root.contains(button)) return;
