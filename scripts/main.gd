@@ -56,6 +56,7 @@ var game_elapsed := 0.0
 var reflex_start_ms := 0
 var target_index := 0
 var memory_sequence: Array[int] = []
+var memory_show_index := -1
 var active_memory_player := 0
 var dodge_wave := 0
 var last_winner := ""
@@ -364,14 +365,16 @@ func _draw_game_stage() -> void:
 		"memory_grid":
 			_center("WATCH THE PATTERN, THEN REPEAT IT", 150, 190, 980, 18, MUTED)
 			for c in range(4):
-				var rect := Rect2(490 + c * 76, 225, 60, 60)
+				var memory_tile_rect := Rect2(490 + c * 76, 225, 60, 60)
+				var tile_color: Color = BUTTON_COLORS[c]
 				if phase == "memory_show":
-					_rr(rect, BUTTON_COLORS[memory_sequence[c]], 13)
-					_center(str(c + 1), rect.position.x, rect.position.y + 39, rect.size.x, 19, WHITE)
+					var active_tile := memory_show_index >= 0 and memory_sequence[memory_show_index] == c
+					_rr(memory_tile_rect, tile_color.lightened(0.12) if active_tile else Color("#DCE2EE"), 13)
+					if active_tile:
+						_rr(Rect2(memory_tile_rect.position.x + 5, memory_tile_rect.position.y + 5, 50, 50), tile_color, 10)
 				else:
-					_rr(rect, Color("#E8ECF5"), 13)
-					_center("?", rect.position.x, rect.position.y + 39, rect.size.x, 22, MUTED)
-			_center("PLAYER %d'S TURN" % (active_memory_player + 1) if phase == "memory_input" else "MEMORIZE THE COLORS", 350, 340, 580, 19, PURPLE)
+					_rr(memory_tile_rect, tile_color, 13)
+			_center("PLAYER %d'S TURN" % (active_memory_player + 1) if phase == "memory_input" else ("WATCH " + str(memory_show_index + 1) + " / " + str(memory_sequence.size()) if phase == "memory_show" else "REPEAT THE COLORS"), 350, 340, 580, 19, PURPLE)
 		"mini_racers":
 			_center("HOLD YOUR LANE BUTTON TO ACCELERATE", 118, 150, 425, 15, Color("#E5EAF5"))
 			_rr(Rect2(82, 162, 1120, 290), Color("#B8E6C5"), 24)
@@ -929,9 +932,10 @@ func _start_game(game_id: String) -> void:
 	reflex_start_ms = 0
 	target_index = randi_range(0, 3)
 	memory_sequence.clear()
-	for j in range(4):
+	for j in range(6 if player_count >= 3 else 5):
 		memory_sequence.append(randi_range(0, 3))
 	active_memory_player = 0
+	memory_show_index = -1
 	active_block_player = 0
 	selected_block_piece = 0
 	dodge_wave = 0
@@ -959,7 +963,8 @@ func _start_game(game_id: String) -> void:
 			phase_timer = randf_range(1.4, 3.5)
 		"memory_grid":
 			phase = "memory_show"
-			phase_timer = 2.8
+			memory_show_index = -1
+			phase_timer = 0.45
 		"dodge_arena":
 			phase = "dodge_ready"
 			phase_timer = randf_range(0.8, 1.5)
@@ -1073,6 +1078,10 @@ func _tick_game(delta: float) -> void:
 			if phase == "memory_show":
 				phase_timer -= delta
 				if phase_timer <= 0.0:
+					if memory_show_index < memory_sequence.size() - 1:
+						memory_show_index += 1
+						phase_timer = 0.42
+				else:
 					phase = "memory_input"
 					active_memory_player = 0
 					player_status[0] = "YOUR TURN!"
@@ -1083,8 +1092,10 @@ func _tick_game(delta: float) -> void:
 					if active_memory_player >= player_count:
 						_finish_round()
 					else:
-						phase = "memory_input"
-						player_status[active_memory_player] = "YOUR TURN!"
+						phase = "memory_show"
+						memory_show_index = -1
+						phase_timer = 0.42
+						player_status[active_memory_player] = "WATCH THE PATTERN"
 		"dodge_arena":
 			phase_timer -= delta
 			if phase == "dodge_ready" and phase_timer <= 0.0:
@@ -1245,7 +1256,7 @@ func _score_label(p: int) -> String:
 	match current_game:
 		"tap_sprint": return "%d taps" % int(data.get("taps", 0))
 		"reflex_rush": return ("%d ms" % int(data.get("reaction_ms", -1))) if int(data.get("reaction_ms", -1)) >= 0 else "False start / too slow"
-		"memory_grid": return "%d / 4 remembered" % int(data.get("raw", 0))
+		"memory_grid": return "%d / %d remembered" % [int(data.get("raw", 0)), memory_sequence.size()]
 		"mini_racers": return "%d m raced" % int(data.get("progress", 0))
 		"dodge_arena": return "%d successful dodges" % int(data.get("hits", 0))
 		"target_rush": return "%d hits · %d misses" % [int(data.get("hits", 0)), int(data.get("misses", 0))]
