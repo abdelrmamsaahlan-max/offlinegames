@@ -11,9 +11,11 @@ An offline-first, same-device 1–4 player mini-game collection prototype built 
 - **iOS / App Store:** exporting and signing the iOS app requires macOS with Xcode. Godot exports an Xcode project, which is then built and signed for an iPhone/App Store release. [Official iOS export guide](https://docs.godotengine.org/en/latest/tutorials/export/exporting_for_ios.html).
 - **Release setup still needed:** final app ID/package name, store-ready launcher icons, export presets and signing, privacy/store listing details, and device testing. Do not publish the prototype until these are checked.
 
-## Optional browser preview
+## Browser preview (for testing only)
 
-To run the separate web prototype in a browser, download the [source ZIP](https://github.com/abdelrmamsaahlan-max/offlinegames/archive/refs/heads/main.zip) and open it in the [Godot Web Editor](https://editor.godotengine.org/releases/4.7.stable/godot.editor.html). This is useful for experimentation, but the web editor is not the path to creating the final Android App Bundle or signed iOS App Store build.
+[**Open the Pocket Party browser preview**](https://offlinegames-eight.vercel.app).
+
+The browser preview uses `index.html`, `game.js`, and `styles.css`. It is useful for testing the UI and gameplay, but it is separate from the native Godot app and is not the Google Play / App Store build. Changes pushed to the repository's `main` branch trigger a Vercel deployment. If Vercel requests sign-in, open the preview while signed in to the account with project access.
 
 ## Open locally
 1. Download this repository using **Code → Download ZIP**, or clone it.
