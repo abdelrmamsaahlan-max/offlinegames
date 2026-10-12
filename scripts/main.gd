@@ -64,6 +64,8 @@ var race_mouse_player := -1
 var race_touch_players: Dictionary = {}
 var orb_mouse_player := -1
 var orb_touch_players: Dictionary = {}
+var block_mouse_drag_piece := -1
+var block_touch_pieces: Dictionary = {}
 var active_block_player := 0
 var selected_block_piece := 0
 var orb_target := Vector2(640.0, 300.0)
@@ -87,6 +89,7 @@ func _gui_input(event: InputEvent) -> void:
 		var mouse_pos := event.position * scale_to_design
 		if event.pressed:
 			_handle_tap(mouse_pos)
+			block_mouse_drag_piece = _block_piece_at(mouse_pos) if screen_name == "game" and current_game == "block_battle" else -1
 			race_mouse_player = -1
 			orb_mouse_player = -1
 			if screen_name == "game" and current_game == "mini_racers":
@@ -98,6 +101,12 @@ func _gui_input(event: InputEvent) -> void:
 				if orb_mouse_player >= 0:
 					_update_orb_joystick(orb_mouse_player, mouse_pos)
 		else:
+			if block_mouse_drag_piece >= 0 and screen_name == "game" and current_game == "block_battle":
+				var drop_cell := _block_cell_at(mouse_pos)
+				if drop_cell.x >= 0:
+					selected_block_piece = block_mouse_drag_piece
+					_place_block_piece(drop_cell.y, drop_cell.x)
+			block_mouse_drag_piece = -1
 			if race_mouse_player >= 0 and race_mouse_player < player_data.size():
 				player_data[race_mouse_player]["throttle"] = false
 			if orb_mouse_player >= 0 and orb_mouse_player < player_data.size():
@@ -114,6 +123,10 @@ func _gui_input(event: InputEvent) -> void:
 		var touch_pos := event.position * scale_to_design
 		if event.pressed:
 			_handle_tap(touch_pos)
+			if screen_name == "game" and current_game == "block_battle":
+				var touched_piece := _block_piece_at(touch_pos)
+				if touched_piece >= 0:
+					block_touch_pieces[event.index] = touched_piece
 			if screen_name == "game" and current_game == "mini_racers":
 				var touch_player := _race_player_at(touch_pos)
 				if touch_player >= 0:
@@ -125,6 +138,13 @@ func _gui_input(event: InputEvent) -> void:
 					orb_touch_players[event.index] = orb_player
 					_update_orb_joystick(orb_player, touch_pos)
 		else:
+			if block_touch_pieces.has(event.index):
+				var piece_index: int = int(block_touch_pieces[event.index])
+				block_touch_pieces.erase(event.index)
+				var drop_cell := _block_cell_at(touch_pos)
+				if drop_cell.x >= 0 and screen_name == "game" and current_game == "block_battle":
+					selected_block_piece = piece_index
+					_place_block_piece(drop_cell.y, drop_cell.x)
 			if race_touch_players.has(event.index):
 				var released_player: int = int(race_touch_players[event.index])
 				race_touch_players.erase(event.index)
@@ -544,6 +564,19 @@ func _home_start_rect() -> Rect2:
 func _block_cell_rect(row: int, col: int) -> Rect2:
 	return Rect2(362.0 + float(col) * 38.0, 160.0 + float(row) * 38.0, 35.0, 35.0)
 
+func _block_cell_at(pos: Vector2) -> Vector2i:
+	for row in range(8):
+		for col in range(8):
+			if _block_cell_rect(row, col).has_point(pos):
+				return Vector2i(col, row)
+	return Vector2i(-1, -1)
+
+func _block_piece_at(pos: Vector2) -> int:
+	for i in range(3):
+		if _block_piece_rect(i).has_point(pos):
+			return i
+	return -1
+
 func _block_piece_rect(index: int) -> Rect2:
 	return Rect2(705.0 + float(index) * 166.0, 255.0, 150.0, 132.0)
 
@@ -936,6 +969,8 @@ func _go_home() -> void:
 	race_touch_players.clear()
 	orb_mouse_player = -1
 	orb_touch_players.clear()
+	block_mouse_drag_piece = -1
+	block_touch_pieces.clear()
 	_save_local_save()
 	queue_redraw()
 
@@ -946,6 +981,8 @@ func _go_to_select() -> void:
 	race_touch_players.clear()
 	orb_mouse_player = -1
 	orb_touch_players.clear()
+	block_mouse_drag_piece = -1
+	block_touch_pieces.clear()
 	queue_redraw()
 
 func _tick_game(delta: float) -> void:
