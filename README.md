@@ -26,9 +26,13 @@ The browser preview uses `index.html`, `game.js`, and `styles.css`. It is useful
 ## Current prototype
 - Separate party setup home screen and mini-game selection menu.
 - Eight original mini-games: Tap Sprint, Reflex Rush, Memory Grid, Mini Racers, Dodge Arena, Target Rush, Block Battle, and Orb Dash.
-- Mini Racers has moving 2D cars, hold-to-accelerate, and nitro boosts.
+- Tap Sprint rewards every five taps with combo bonuses.
+- Reflex Rush measures reaction time and penalizes false starts.
+- Memory Grid reveals its pattern one color at a time, with a longer sequence for three or four players.
+- Mini Racers has moving 2D cars, hold-to-accelerate, nitro boosts, and a finish line.
 - Block Battle is a turn-based 8×8 block puzzle with row/column clears and score bonuses.
 - Orb Dash is a joystick-controlled gem collection race, with 10 points per gem.
+- Target Rush speeds up as the round progresses; Dodge Arena gradually shortens each dodge window.
 - 1–4 player selection and tournament length selection.
 - Quick play and tournament flow.
 - Tournament mode can randomly choose from all eight games; round scores feed into tournament points and the final winner screen.
