@@ -25,10 +25,14 @@ The browser preview uses `index.html`, `game.js`, and `styles.css`. It is useful
 
 ## Current prototype
 - Separate party setup home screen and mini-game selection menu.
-- Six original mini-games, including a 2D racing track with hold-to-accelerate controls, nitro boosts, and moving cars.
+- Eight original mini-games: Tap Sprint, Reflex Rush, Memory Grid, Mini Racers, Dodge Arena, Target Rush, Block Battle, and Orb Dash.
+- Mini Racers has moving 2D cars, hold-to-accelerate, and nitro boosts.
+- Block Battle is a turn-based 8×8 block puzzle with row/column clears and score bonuses.
+- Orb Dash is a joystick-controlled gem collection race, with 10 points per gem.
 - 1–4 player selection and tournament length selection.
 - Quick play and tournament flow.
-- Round scores, tournament points, final winner screen.
+- Tournament mode can randomly choose from all eight games; round scores feed into tournament points and the final winner screen.
+- Browser input and puzzle placement have been syntax-checked and interaction-tested; the native Godot project still needs import/runtime testing in Godot.
 - Local settings; core gameplay does not need internet access.
 - Original vector icon and code-drawn interface/game visuals.
 
@@ -41,7 +45,10 @@ Not integrated yet: live ads, Google Play Billing/VIP purchase, production sound
 - Desktop test: click the player's colored panel.
 - Touch: tap the assigned player panel.
 - Memory Grid and Target Rush use the colored buttons inside each player's panel.
-- Press Escape to leave a round and return home.
+- Mini Racers: hold your player control to accelerate; tap for a nitro boost.
+- Block Battle: select a shape and tap an empty board position, or drag the shape onto the board. Clear complete rows or columns for bonus points.
+- Orb Dash: drag the joystick in your player panel to steer your orb toward gold gems.
+- Press Escape to return from a game to the game menu.
 
 ## Team workflow
 This repository is the source of truth for project edits. Keep the main branch runnable and commit after verified changes. Ads/billing should be added only after the core game has been runtime-tested.
