@@ -818,12 +818,19 @@
     const laneHeight = 260 / settings.players;
     game.players.forEach(function (p, i) {
       const car = document.getElementById("race-car-" + i);
-      if (car) car.setAttribute("transform", "translate(" + (68 + p.progress) + " " + (laneHeight * (i + 0.5) - 15) + ")");
+      if (car) {
+        car.setAttribute("transform", "translate(" + (68 + p.progress) + " " + (laneHeight * (i + 0.5) - 15 + p.raceSteer * 22) + ")");
+        car.classList.toggle("car-boost", p.raceSpeed > 48 || performance.now() < p.boostFlash);
+      }
+      (game.raceObstacles[i] || []).forEach(function (obstacle) {
+        const hazard = document.getElementById("race-obstacle-" + i + "-" + obstacle.id);
+        if (hazard && obstacle.passed) hazard.classList.add("is-passed");
+      });
     });
     const hud = document.getElementById("race-hud-status");
     if (hud) {
       const leader = game.players.reduce(function(best, p, i, arr) { return p.progress > arr[best].progress ? i : best; }, 0);
-      hud.textContent = "P" + (leader + 1) + " LEADS · " + Math.round(game.players[leader].progress) + " m";
+      hud.textContent = "P" + (leader + 1) + " LEADS · " + Math.round(game.players[leader].progress) + " m · " + game.players[leader].cleanPasses + " CLEAN PASSES";
     }
   }
 
@@ -919,26 +926,34 @@
       const laneHeight = 260 / settings.players;
       const dividers = Array.from({length: settings.players - 1}, function(_, i) {
         const y = Math.round((i + 1) * laneHeight);
-        return '<path d="M8 ' + y + ' H790" stroke="#7D879B" stroke-width="2" stroke-dasharray="12 10" opacity=".7"/>';
+        return '<path d="M8 ' + y + ' H790" stroke="#93A4BD" stroke-width="2" stroke-dasharray="12 10" opacity=".7"/>';
+      }).join("");
+      const hazards = (game.raceObstacles || []).map(function (lane, playerIndex) {
+        return lane.map(function (obstacle) {
+          if (obstacle.passed) return "";
+          const x = 68 + obstacle.progress;
+          const y = laneHeight * (playerIndex + 0.5) - 4 + obstacle.offset * 22;
+          return '<g class="race-obstacle" id="race-obstacle-' + playerIndex + '-' + obstacle.id + '" transform="translate(' + x + ' ' + y + ')"><ellipse cy="11" rx="9" ry="3" fill="#0b1221" opacity=".38"/><path d="M-8 10 L-4 -8 L4 -8 L8 10 Z" fill="#ff9a42" stroke="#fff" stroke-width="1"/><path d="M-6 2H6 M-5 -3H5" stroke="#fff" stroke-width="2.3"/><rect x="-10" y="9" width="20" height="3" rx="1.5" fill="#17213b"/></g>';
+        }).join("");
       }).join("");
       const cars = game.players.map(function(p, i) {
-        const y = laneHeight * (i + 0.5) - 15;
-        return '<g id="race-car-' + i + '" transform="translate(' + (68 + p.progress) + ' ' + y + ')">' +
-          '<ellipse cx="28" cy="30" rx="27" ry="5" fill="#111827" opacity=".3"/>' +
+        const y = laneHeight * (i + 0.5) - 15 + p.raceSteer * 22;
+        return '<g id="race-car-' + i + '" class="race-car' + (p.raceSpeed > 48 ? ' car-boost' : '') + '" transform="translate(' + (68 + p.progress) + ' ' + y + ')">' +
+          '<path class="nitro-flame" d="M0 15 L-17 9 L-10 16 L-17 23 Z" fill="#ffe16b"/><ellipse cx="28" cy="30" rx="27" ry="5" fill="#111827" opacity=".3"/>' +
           '<rect x="3" y="8" width="51" height="19" rx="6" fill="' + colors[i] + '" stroke="#fff" stroke-width="1.5"/>' +
           '<path d="M13 9 L20 1 H38 L46 9 Z" fill="' + colors[i] + '" stroke="#fff" stroke-width="1.5"/>' +
           '<path d="M22 4 H35 L40 9 H18 Z" fill="#DDF7FF"/>' +
           '<rect x="8" y="13" width="5" height="5" rx="2" fill="#fff"/><rect x="45" y="13" width="5" height="5" rx="2" fill="#fff"/>' +
-          '<circle cx="14" cy="27" r="6" fill="#141B2D" stroke="#D8DEEA" stroke-width="2"/><circle cx="44" cy="27" r="6" fill="#141B2D" stroke="#D8DEEA" stroke-width="2"/>' +
+          '<g class="race-wheel"><circle cx="14" cy="27" r="6" fill="#141B2D" stroke="#D8DEEA" stroke-width="2"/><path d="M14 23V31M10 27H18" stroke="#d8deea" stroke-width="1"/></g><g class="race-wheel"><circle cx="44" cy="27" r="6" fill="#141B2D" stroke="#D8DEEA" stroke-width="2"/><path d="M44 23V31M40 27H48" stroke="#d8deea" stroke-width="1"/></g>' +
           '<text x="28" y="22" font-size="10" text-anchor="middle" font-weight="900" fill="' + (i === 2 ? "#17233e" : "#fff") + '">' + (i + 1) + '</text></g>';
       }).join("");
-      html = '<div class="race-scene"><div class="race-scene-hud"><span>🏁 FIRST TO THE LINE WINS</span><span id="race-hud-status">HOLD YOUR BUTTON TO ACCELERATE</span></div>' +
-        '<svg id="race-track" class="race-track" viewBox="0 0 800 260" role="img" aria-label="2D race track with moving player cars" preserveAspectRatio="none">' +
-        '<defs><linearGradient id="raceRoad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#28334B"/><stop offset="100%" stop-color="#1B2437"/></linearGradient><pattern id="raceGrass" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M0 18 L18 0" stroke="#6AB58A" stroke-width="2" opacity=".3"/></pattern></defs>' +
-        '<rect x="0" y="0" width="800" height="260" rx="16" fill="#BFE8CB"/><rect x="6" y="6" width="788" height="248" rx="14" fill="url(#raceGrass)"/>' +
-        '<rect x="18" y="10" width="764" height="240" rx="13" fill="url(#raceRoad)" stroke="#fff" stroke-width="3"/>' +
-        '<path d="M27 18 H773 M27 242 H773" stroke="#fff" stroke-width="3" opacity=".9"/>' +
-        dividers +
+      html = '<div class="race-scene"><div class="race-scene-hud"><span>🏁 FIRST TO THE LINE WINS</span><span id="race-hud-status">STEER AROUND CONES · PUSH UP TO ACCELERATE</span></div>' +
+        '<svg id="race-track" class="race-track" viewBox="0 0 800 260" role="img" aria-label="Arcade race with steering, moving cars, road cones and finish line" preserveAspectRatio="none">' +
+        '<defs><linearGradient id="raceRoad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#27334C"/><stop offset="100%" stop-color="#111A2E"/></linearGradient><linearGradient id="raceGrass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#72D9A2"/><stop offset="100%" stop-color="#2E9E7A"/></linearGradient><pattern id="raceGrassPattern" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M0 18 L18 0" stroke="#D4FFE8" stroke-width="2" opacity=".25"/></pattern><pattern id="raceDash" width="44" height="12" patternUnits="userSpaceOnUse"><rect x="4" y="4" width="26" height="4" rx="2" fill="#F8FAFC" opacity=".48"/></pattern></defs>' +
+        '<rect x="0" y="0" width="800" height="260" rx="16" fill="url(#raceGrass)"/><rect x="6" y="6" width="788" height="248" rx="14" fill="url(#raceGrassPattern)"/>' +
+        '<rect x="18" y="10" width="764" height="240" rx="13" fill="url(#raceRoad)" stroke="#E8F1FF" stroke-width="3"/>' +
+        '<path d="M27 18 H773 M27 242 H773" stroke="#fff" stroke-width="3" opacity=".9"/><rect x="27" y="0" width="746" height="260" fill="url(#raceDash)" opacity=".24"/>' +
+        dividers + hazards +
         '<path d="M68 12 V248" stroke="#ffe16b" stroke-width="5" stroke-dasharray="8 6"/>' +
         '<path d="M735 12 V248" stroke="#fff" stroke-width="6" stroke-dasharray="8 5"/>' +
         '<text x="40" y="30" font-size="10" font-weight="900" fill="#fff">START</text><text x="700" y="30" font-size="10" font-weight="900" fill="#fff">FINISH</text>' +
