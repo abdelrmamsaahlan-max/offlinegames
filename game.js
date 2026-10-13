@@ -88,6 +88,10 @@
   }
   function sfx(name, accent) {
     if (!settings.sound) return;
+    try {
+      audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === "suspended") audioContext.resume();
+    } catch (e) {}
     const tunes = {
       ui: [[540,0.035,"triangle",0]],
       select: [[430,0.045,"sine",0],[650,0.055,"triangle",28]],
@@ -354,15 +358,23 @@
     if (next >= game.players.length) { finishRound(); return; }
     game.activePuzzlePlayer = next;
     const player = game.players[next];
-    game.selectedPiece = firstUsableBlockPiece(player);
     game.timeLeft = game.duration;
-    player.status = "YOUR TURN — MAKE IT COUNT!";
-    if (!blockPlayerHasMove(player)) {
+    let move = findBestBlockMove(player);
+    if (!move) {
       player.blockPieces = makeBlockPieces(player.board);
-      game.selectedPiece = firstUsableBlockPiece(player);
-      player.status = blockPlayerHasMove(player) ? "FRESH SHAPES! YOUR TURN" : "NO LEGAL MOVES";
+      move = findBestBlockMove(player);
     }
-    if (!blockPlayerHasMove(player)) game.timeLeft = 0.01;
+    if (move) {
+      game.selectedPiece = move.pieceIndex;
+      const piece = player.blockPieces[move.pieceIndex];
+      if (piece) orientBlockPiece(piece, move.rotation);
+      player.blockCursor = { row: move.row, col: move.col };
+      player.status = "YOUR TURN — MAKE IT COUNT!";
+    } else {
+      game.selectedPiece = -1;
+      player.status = "NO LEGAL MOVES";
+      game.timeLeft = 0.01;
+    }
     renderGame();
   }
   function placeBlockPiece(row, col) {
