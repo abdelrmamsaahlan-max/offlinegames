@@ -424,3 +424,7 @@ button{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease,bord
 .target-arena #target-display{border-radius:20px;box-shadow:0 0 0 8px rgba(255,255,255,.48),0 0 32px color-mix(in srgb,var(--arena-dot),transparent 42%),0 9px 0 rgba(39,30,70,.12);animation:target-pulse 1s ease-in-out infinite alternate}
 @keyframes target-pulse{from{transform:scale(.96);filter:saturate(.9)}to{transform:scale(1.055);filter:saturate(1.18)}}
 @media(prefers-reduced-motion:reduce){.game-card:nth-child(n){animation-delay:0s}}
+
+.race-wheel{animation:none}
+.race-car.car-moving .race-wheel{animation:race-wheel-spin .34s linear infinite}
+.race-car.car-boost.car-moving .race-wheel{animation-duration:.2s}
