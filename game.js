@@ -620,7 +620,8 @@
   }
   function startGame(id, inTournament) {
     const g = gameById(id);
-    const duration = id === "tap_sprint" ? 10 : (id === "mini_racers" ? 30 : (id === "target_rush" ? 12 : (id === "block_battle" ? 35 : (id === "orb_dash" ? 30 : (id === "star_snatch" ? 15 : (id === "stack_tower" ? 8 : 0)))));
+    const durations = { tap_sprint: 10, mini_racers: 30, target_rush: 12, block_battle: 35, orb_dash: 30, star_snatch: 15, stack_tower: 8 };
+    const duration = durations[id] || 0;
     game = {
       id: id, data: g, tournament: inTournament, round: tournament ? tournament.round : 1,
       players: Array.from({ length: settings.players }, newPlayer),
