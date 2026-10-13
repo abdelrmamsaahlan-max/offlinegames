@@ -42,6 +42,7 @@
   let audioContext = null;
   let activeBlockDrag = null;
   let resumeAfterSettings = false;
+  let pausedForVisibility = false;
 
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
@@ -766,6 +767,7 @@
     startGame(id, false);
   }
   function startGame(id, inTournament) {
+    pausedForVisibility = false;
     const g = gameById(id);
     trackPlayedGame(id);
     const durations = { tap_sprint: 10, mini_racers: 30, target_rush: 12, block_battle: 35, orb_dash: 30, star_snatch: 15, stack_tower: 8 };
@@ -1983,6 +1985,10 @@
 
   function clearRaceInput() {
     pressedRaceKeys.clear();
+    if (activeBlockDrag) {
+      if (activeBlockDrag.button) activeBlockDrag.button.classList.remove("dragging");
+      activeBlockDrag = null;
+    }
     Array.from(joystickPointerOwners.keys()).forEach(function (pointerId) { releaseJoystick(pointerId, true); });
     racePointerOwners.clear();
     if (game && game.id === "mini_racers") {
@@ -2042,8 +2048,15 @@
   document.addEventListener("visibilitychange", function () {
     if (document.hidden && game && currentScreen === "game") {
       toast("Paused while you were away.");
+      pausedForVisibility = !game.isPaused;
+      if (pausedForVisibility) game.isPaused = true;
       clearRaceInput();
       stopTick();
+    } else if (!document.hidden && game && currentScreen === "game" && pausedForVisibility) {
+      pausedForVisibility = false;
+      game.isPaused = false;
+      lastTick = performance.now();
+      if (!tickTimer) tickTimer = window.setInterval(tick, 33);
     } else if (!document.hidden && game && currentScreen === "game" && !game.isPaused && !tickTimer) {
       lastTick = performance.now();
       tickTimer = window.setInterval(tick, 33);
