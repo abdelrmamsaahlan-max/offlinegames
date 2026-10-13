@@ -1283,6 +1283,145 @@
     renderResult();
   }
 
+  const TTT_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  function ticWinner(board) {
+    for (const line of TTT_LINES) {
+      const a = board[line[0]];
+      if (a && a === board[line[1]] && a === board[line[2]]) return a;
+    }
+    return board.every(function (cell) { return !!cell; }) ? "DRAW" : null;
+  }
+  function ticMinimax(board, turn, depth) {
+    const outcome = ticWinner(board);
+    if (outcome === "O") return 10 - depth;
+    if (outcome === "X") return depth - 10;
+    if (outcome === "DRAW") return 0;
+    const maximizing = turn === "O";
+    let best = maximizing ? -Infinity : Infinity;
+    board.forEach(function (cell, index) {
+      if (cell !== null) return;
+      board[index] = turn;
+      const score = ticMinimax(board, turn === "O" ? "X" : "O", depth + 1);
+      board[index] = null;
+      best = maximizing ? Math.max(best, score) : Math.min(best, score);
+    });
+    return best;
+  }
+  function bestTicMove(board) {
+    let best = -Infinity, choice = -1;
+    board.forEach(function (cell, index) {
+      if (cell !== null) return;
+      board[index] = "O";
+      const score = ticMinimax(board, "X", 1);
+      board[index] = null;
+      if (score > best) { best = score; choice = index; }
+    });
+    return choice;
+  }
+  function endTicRound() {
+    const winner = ticWinner(game.tttBoard);
+    if (!winner) return false;
+    game.tttOver = true;
+    game.tttWinner = winner;
+    if (winner === "DRAW") {
+      game.players[0].status = "DRAW GAME";
+      game.players[1].status = "DRAW GAME";
+    } else {
+      game.players[0].status = winner === "X" ? "WINNER · X" : (game.aiOpponent ? "BOT WINS · O" : "LOST · X");
+      game.players[1].status = winner === "O" ? "WINNER · O" : "LOST · O";
+    }
+    finishRound();
+    return true;
+  }
+  function makeTicMove(index, symbol) {
+    if (!game || game.id !== "tic_tac_toe" || currentScreen !== "game" || game.tttOver ||
+        !Number.isInteger(index) || index < 0 || index > 8 || game.tttBoard[index] !== null) return;
+    if (symbol !== "X" && symbol !== "O") return;
+    game.tttBoard[index] = symbol;
+    sfx("place");
+    if (endTicRound()) return;
+    game.tttTurn = symbol === "X" ? 1 : 0;
+    game.players[0].status = game.tttTurn === 0 ? "YOUR MOVE · X" : "THINKING…";
+    game.players[1].status = game.tttTurn === 1 ? (game.aiOpponent ? "BOT THINKING…" : "YOUR MOVE · O") : (game.aiOpponent ? "AI OPPONENT" : "PLAYER 2");
+    renderGame();
+    if (game.aiOpponent && game.tttTurn === 1) {
+      const activeGame = game;
+      window.setTimeout(function () {
+        if (game !== activeGame || currentScreen !== "game" || game.id !== "tic_tac_toe" || game.tttOver) return;
+        const move = bestTicMove(game.tttBoard);
+        if (move >= 0) makeTicMove(move, "O");
+      }, 180);
+    }
+  }
+  function connectFourWinner(board, row, col, disc) {
+    const directions = [[0,1],[1,0],[1,1],[1,-1]];
+    for (const dir of directions) {
+      let count = 1;
+      for (const side of [-1,1]) {
+        let r = row + dir[0] * side, c = col + dir[1] * side;
+        while (r >= 0 && r < 6 && c >= 0 && c < 7 && board[r * 7 + c] === disc) {
+          count++; r += dir[0] * side; c += dir[1] * side;
+        }
+      }
+      if (count >= 4) return true;
+    }
+    return false;
+  }
+  function hypotheticalConnectWin(board, col, disc) {
+    for (let row = 5; row >= 0; row--) {
+      const index = row * 7 + col;
+      if (board[index] !== null) continue;
+      board[index] = disc;
+      const win = connectFourWinner(board, row, col, disc);
+      board[index] = null;
+      if (win) return true;
+      break;
+    }
+    return false;
+  }
+  function chooseConnectColumn(board) {
+    const preference = [3,2,4,1,5,0,6];
+    for (const col of preference) if (hypotheticalConnectWin(board, col, 1)) return col;
+    for (const col of preference) if (hypotheticalConnectWin(board, col, 0)) return col;
+    const open = preference.filter(function (col) { return board[col] === null; });
+    return open.length ? open[Math.floor(Math.random() * Math.min(3, open.length))] : -1;
+  }
+  function makeConnectDrop(col) {
+    if (!game || game.id !== "connect_four" || currentScreen !== "game" || game.connectOver ||
+        !Number.isInteger(col) || col < 0 || col > 6) return;
+    const disc = game.connectTurn;
+    if (game.aiOpponent && disc === 1) return;
+    let row = 5;
+    while (row >= 0 && game.connectBoard[row * 7 + col] !== null) row--;
+    if (row < 0) { sfx("error"); return; }
+    game.connectBoard[row * 7 + col] = disc;
+    sfx("place");
+    if (connectFourWinner(game.connectBoard, row, col, disc)) {
+      game.connectOver = true;
+      game.connectWinner = disc;
+      game.players[disc].status = "FOUR IN A ROW · WIN!";
+      game.players[1 - disc].status = "GAME OVER";
+      finishRound();
+      return;
+    }
+    if (game.connectBoard.every(function (cell) { return cell !== null; })) {
+      game.connectOver = true; game.connectWinner = "DRAW";
+      game.players.forEach(function (p) { p.status = "DRAW GAME"; });
+      finishRound();
+      return;
+    }
+    game.connectTurn = 1 - disc;
+    game.players[game.connectTurn].status = game.aiOpponent && game.connectTurn === 1 ? "BOT THINKING…" : "YOUR TURN";
+    game.players[disc].status = "DISC PLACED";
+    renderGame();
+    if (game.aiOpponent && game.connectTurn === 1) {
+      const activeGame = game;
+      window.setTimeout(function () {
+        if (game !== activeGame || currentScreen !== "game" || game.id !== "connect_four" || game.connectOver) return;
+        makeConnectDrop(chooseConnectColumn(game.connectBoard));
+      }, 200);
+    }
+  }
   function renderArenaContent() {
     const id = game.id;
     let bg = game.data.soft;
