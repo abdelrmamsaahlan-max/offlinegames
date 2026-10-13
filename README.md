@@ -29,30 +29,30 @@ The browser preview uses `index.html`, `game.js`, and `styles.css`. It is useful
 - Tap Sprint rewards every five taps with combo bonuses.
 - Reflex Rush measures reaction time and penalizes false starts.
 - Memory Grid reveals its pattern one color at a time, with a longer sequence for three or four players.
-- Mini Racers has moving 2D cars, hold-to-accelerate, nitro boosts, and a finish line.
-- Block Battle is a turn-based 8×8 block puzzle with row/column clears and score bonuses.
-- Orb Dash is a joystick-controlled gem collection race, with 10 points per gem.
+- Mini Racers is a neon-styled arcade race with animated cars and wheels, joystick steering, nitro bursts, road cones, collision slowdown, clean-pass speed bonuses, and a finish line.
+- Block Battle is a turn-based 8×8 block puzzle with varied polyomino shapes, rotation, board-aware legal shape racks, a live placement ghost, Smart Move suggestions, row/column clears, streak bonuses, and animated placement/clear feedback.
+- Orb Dash is a continuous joystick-controlled gem collection race, with 10 points per gem. The browser build provides a direction-stick on every game panel; direction maps to actions in timing games, colors in color games, steering/throttle in racing, and cursor/placement in Block Battle.
 - Target Rush speeds up as the round progresses; Dodge Arena gradually shortens each dodge window.
 - 1–4 player selection and tournament length selection.
 - Quick play and tournament flow.
 - Tournament mode can randomly choose from all eight games; round scores feed into tournament points and the final winner screen.
-- Browser input and puzzle placement have been syntax-checked and interaction-tested; the native Godot project still needs import/runtime testing in Godot.
+- Browser JavaScript has been syntax-checked and interaction-tested, including line clears, 40 consecutive smart puzzle placements, game-screen rendering, directional input for Memory Grid/Target Rush, and race collision/clean-pass scoring. This is a test harness, not a replacement for real browser/device QA; the native Godot source still needs import/runtime testing in Godot.
 - Local settings; core gameplay does not need internet access.
-- Original vector icon and code-drawn interface/game visuals.
+- Original vector/code-drawn visuals with an arcade color pass, motion effects, responsive joystick controls, and Web Audio synthesized effects for menu actions, placements, line clears, reactions, boosts, gems, collisions, and round results.
 
 ## Important status
 This is a development prototype, not a store-ready release. Recent gameplay/UI improvements have been committed to GitHub. The updated Godot project still needs import/runtime verification in the Godot editor and playtesting on devices. Test import and gameplay in the editor and on physical devices before relying on it.
 
-Not integrated yet: live ads, Google Play Billing/VIP purchase, production sound, final signed Android App Bundle, Play Console release setup, and complete device QA.
+Not integrated yet: live ads, Google Play Billing/VIP purchase, custom recorded music/voice and a production audio mix, final signed Android App Bundle, Play Console release setup, native Godot parity for the newest browser changes, and complete device QA.
 
 ## Controls
-- Desktop test: click the player's colored panel.
-- Touch: tap the assigned player panel.
-- Memory Grid and Target Rush use the colored buttons inside each player's panel.
-- Mini Racers: hold your player control to accelerate; tap for a nitro boost.
-- Block Battle: select a shape and tap an empty board position, or drag the shape onto the board. Clear complete rows or columns for bonus points.
-- Orb Dash: drag the joystick in your player panel to steer your orb toward gold gems.
-- Press Escape to return from a game to the game menu.
+- Desktop: use mouse clicks or the on-screen direction sticks; touch: drag a stick in the direction you want.
+- Tap Sprint, Reflex Rush, and Dodge Arena trigger their action from the player panel/joystick.
+- Memory Grid and Target Rush accept either the color buttons or a joystick direction (up/right/down/left maps to one of the four colors).
+- Mini Racers: push up to accelerate, steer diagonally left/right to dodge cones, and tap **NITRO BOOST** for a burst.
+- Block Battle: select a shape and click/tap an empty board cell, or drag the shape. **↻ ROTATE** turns the selected piece, **SMART MOVE** selects a high-value legal placement, **PLACE PIECE** uses the highlighted spot, and the joystick moves the cursor (release to place). Full rows and columns clear for bonuses.
+- Orb Dash: continuously steer toward gold gems; each gem is worth 10 points.
+- Use the top sound toggle for synthesized sound effects. Press Escape to return from a game to the game menu.
 
 ## Team workflow
 This repository is the source of truth for project edits. Keep the main branch runnable and commit after verified changes. Ads/billing should be added only after the core game has been runtime-tested.
