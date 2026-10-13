@@ -1330,6 +1330,11 @@
     return p.hits + " hits";
   }
 
+  function rankPlayers(scores) {
+    return scores.map(function (score, index) { return { score: Number(score) || 0, index: index }; })
+      .sort(function (a, b) { return b.score - a.score || a.index - b.index; });
+  }
+
   function finishRound() {
     if (!game || currentScreen !== "game") return;
     stopTick();
