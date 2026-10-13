@@ -706,8 +706,7 @@
       showIndex: -1, memoryPlayer: 0, wave: 1, nextSoundAt: 0,
       activePuzzlePlayer: 0, selectedPiece: 0, orbTarget: { x: 50, y: 50 }, raceTraffic: [],
       raceTimeElapsed: 0, raceDifficulty: 0, roadScroll: 0, activeStackPlayer: 0,
-      stackX: 35, stackDirection: 1, stackSpeed: 235, starX: 12, starDirection: 1, starSpeed: 78
-      nextTrafficId: 1
+      stackX: 35, stackDirection: 1, stackSpeed: 235, starX: 12, starDirection: 1, starSpeed: 78, nextTrafficId: 1
     };
     game.players.forEach(function (p, i) {
       p.blockPieces = makeBlockPieces(p.board);
