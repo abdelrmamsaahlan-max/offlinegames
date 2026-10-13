@@ -263,24 +263,60 @@
     updateSoundButton();
   }
 
+  function categoryGroup(g) {
+    if (g.id === "mini_racers") return ["RACING"];
+    if (["block_battle","memory_grid","tic_tac_toe","connect_four"].includes(g.id)) return ["PUZZLE"];
+    if (["tic_tac_toe","connect_four"].includes(g.id)) return ["CLASSICS"];
+    return ["PARTY","ARCADE"];
+  }
+  function saveLibraryState() {
+    try { localStorage.setItem("pocketParty.library.v1", JSON.stringify({ favorites: favoriteIds, recent: recentGames })); } catch (e) {}
+  }
+  function toggleFavorite(id) {
+    if (favoriteIds.includes(id)) favoriteIds = favoriteIds.filter(function (item) { return item !== id; });
+    else favoriteIds = favoriteIds.concat(id);
+    saveLibraryState();
+    renderGameSelect();
+  }
+  function trackPlayedGame(id) {
+    recentGames = [id].concat(recentGames.filter(function (item) { return item !== id; })).slice(0, 8);
+    saveLibraryState();
+  }
   function renderGameSelect() {
     currentScreen = "select";
+    const categories = ["ALL","PARTY","ARCADE","RACING","PUZZLE","CLASSICS"];
+    let filtered = gameList.filter(function (g) {
+      const query = libraryQuery.trim().toLowerCase();
+      const matchesQuery = !query || (g.title + " " + g.desc + " " + g.category).toLowerCase().includes(query);
+      const matchesCategory = activeCategory === "ALL" || categoryGroup(g).includes(activeCategory);
+      const matchesFavs = librarySort !== "favorites" || favoriteIds.includes(g.id);
+      const matchesRecent = librarySort !== "recent" || recentGames.includes(g.id);
+      return matchesQuery && matchesCategory && matchesFavs && matchesRecent;
+    });
+    if (librarySort === "az") filtered.sort(function (a,b) { return a.title.localeCompare(b.title); });
+    else if (librarySort === "short") filtered.sort(function (a,b) { return parseInt(a.length,10) - parseInt(b.length,10); });
+    else if (librarySort === "recent") filtered.sort(function (a,b) { return recentGames.indexOf(a.id) - recentGames.indexOf(b.id); });
+    else if (librarySort === "favorites") filtered.sort(function (a,b) { return favoriteIds.indexOf(a.id) - favoriteIds.indexOf(b.id); });
     root.innerHTML = '<div class="shell game-select-shell">' +
-      '<div class="selection-heading"><div><span class="eyebrow"><span class="star">✦</span> STEP 02 / 02</span><h1>Choose your game.</h1><p>' + settings.players + ' player' + (settings.players === 1 ? "" : "s") + ' · Same device · Pick a game to start</p></div>' +
-      '<button class="secondary-button" data-action="home">← BACK TO SETUP</button></div>' +
-      '<section class="game-grid" aria-label="Choose a mini-game">' +
-        gameList.map(function (g, i) {
-          return '<button class="game-card" data-action="quick-play" data-game="' + g.id + '">' +
-            '<div class="game-art">' + assetArt(g.id) + '</div>' +
-            '<div class="game-card-top"><span class="game-category">' + g.category + '</span><span class="game-number">0' + (i + 1) + '</span></div>' +
-            '<h3>' + g.title + '</h3><p>' + g.desc + '</p>' +
-            '<div class="game-card-footer"><span class="game-meta">' + g.length + '</span><span class="play-link">PLAY GAME <span>↗</span></span></div>' +
-          '</button>';
-        }).join("") +
-      '</section>' +
-      '<section class="tournament-launch"><div class="tournament-icon">🏆</div><div class="tournament-copy"><strong>Feeling competitive?</strong><span>Play ' + settings.rounds + ' random rounds, earn points, and crown one champion.</span></div><button class="primary-button" data-action="start-tournament">START TOURNAMENT&nbsp; →</button></section>' +
+      '<div class="selection-heading"><div><span class="eyebrow"><span class="star">✦</span> YOUR ARCADE LIBRARY</span><h1>Choose your game.</h1><p>12 playable games · Shared screen · Pick a challenge</p></div>' +
+      '<div class="selection-actions"><button class="secondary-button" data-action="settings-open">⚙ SETTINGS</button><button class="secondary-button" data-action="home">← BACK TO SETUP</button></div></div>' +
+      '<section class="library-toolbar"><label class="library-search"><span>⌕</span><input id="library-search" type="search" placeholder="Search games, modes, mechanics…" value="' + escapeText(libraryQuery) + '" autocomplete="off"></label><label class="sort-field"><span>SORT</span><select id="library-sort" aria-label="Sort games"><option value="featured" ' + (librarySort === "featured" ? "selected" : "") + '>Featured</option><option value="az" ' + (librarySort === "az" ? "selected" : "") + '>A–Z</option><option value="short" ' + (librarySort === "short" ? "selected" : "") + '>Quickest first</option><option value="favorites" ' + (librarySort === "favorites" ? "selected" : "") + '>Favorites</option><option value="recent" ' + (librarySort === "recent" ? "selected" : "") + '>Recently played</option></select></label></section>' +
+      '<div class="category-chips" aria-label="Filter by category">' + categories.map(function (category) { return '<button class="category-chip ' + (activeCategory === category ? "selected" : "") + '" data-action="library-category" data-value="' + category + '">' + category + '</button>'; }).join("") + '</div>' +
+      '<div class="library-head"><div><h2>Ready to play</h2><p>Real controls, score tracking, and a rematch after every round.</p></div><span class="library-count">' + filtered.length + ' / ' + gameList.length + ' GAMES</span></div>' +
+      (filtered.length ? '<section class="game-grid" aria-label="Choose a mini-game">' + filtered.map(function (g) {
+        const index = gameList.findIndex(function (item) { return item.id === g.id; });
+        const playersText = ["tic_tac_toe","connect_four"].includes(g.id) ? "1–2 PLAYERS" : "1–4 PLAYERS";
+        return '<article class="game-card-shell"><button class="game-card" data-action="quick-play" data-game="' + g.id + '">' +
+          '<div class="game-art">' + assetArt(g.id) + '</div>' +
+          '<div class="game-card-top"><span class="game-category">' + g.category + '</span><span class="game-number">' + String(index + 1).padStart(2,"0") + '</span></div>' +
+          '<h3>' + g.title + '</h3><p>' + g.desc + '</p>' +
+          '<div class="game-card-footer"><span class="game-meta">' + playersText + ' · ' + g.length + '</span><span class="play-link">PLAY <span>↗</span></span></div>' +
+          '</button><button class="favorite-toggle ' + (favoriteIds.includes(g.id) ? "is-favorite" : "") + '" data-action="favorite" data-game="' + g.id + '" aria-label="' + (favoriteIds.includes(g.id) ? "Remove " : "Add ") + g.title + ' ' + (favoriteIds.includes(g.id) ? "from" : "to") + ' favorites">' + (favoriteIds.includes(g.id) ? "♥" : "♡") + '</button></article>';
+      }).join("") + '</section>' : '<div class="empty-library"><span>⌕</span><h2>No games found</h2><p>Try another search or switch to ALL categories.</p><button class="secondary-button" data-action="library-reset">CLEAR FILTERS</button></div>') +
+      '<section class="tournament-launch"><div class="tournament-icon">🏆</div><div class="tournament-copy"><strong>Feeling competitive?</strong><span>Play ' + settings.rounds + ' random rounds and crown one champion.</span></div><button class="primary-button" data-action="start-tournament">START TOURNAMENT&nbsp; →</button></section>' +
     '</div>';
     updateSoundButton();
+    applySettings();
   }
 
   function newPlayer() {
