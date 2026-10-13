@@ -770,7 +770,8 @@
       stackX: 35, stackDirection: 1, stackSpeed: 235, starX: 12, starDirection: 1, starSpeed: 78, nextTrafficId: 1,
       tttBoard: Array(9).fill(null), tttTurn: 0, tttOver: false, tttWinner: null,
       connectBoard: Array(42).fill(null), connectTurn: 0, connectOver: false, connectWinner: null,
-      aiOpponent: settings.players === 1
+      aiOpponent: settings.players === 1,
+      isPaused: false
     };
     game.players.forEach(function (p, i) {
       p.blockPieces = makeBlockPieces(p.board);
@@ -846,7 +847,7 @@
     tickTimer = null;
   }
   function tick() {
-    if (!game || currentScreen !== "game") { stopTick(); return; }
+    if (!game || currentScreen !== "game" || game.isPaused) { stopTick(); return; }
     const now = performance.now();
     const dt = Math.min(0.12, Math.max(0, (now - lastTick) / 1000));
     lastTick = now;
@@ -1432,9 +1433,11 @@
     if (game.aiOpponent && game.tttTurn === 1) {
       const activeGame = game;
       window.setTimeout(function () {
-        if (game !== activeGame || currentScreen !== "game" || game.id !== "tic_tac_toe" || game.tttOver) return;
-        const move = bestTicMove(game.tttBoard);
-        if (move >= 0) makeTicMove(move, "O", true);
+        runAfterResume(activeGame, "tic_tac_toe", function () {
+          if (game.tttOver) return;
+          const move = bestTicMove(game.tttBoard);
+          if (move >= 0) makeTicMove(move, "O", true);
+        });
       }, 180);
     }
   }
@@ -1502,8 +1505,10 @@
     if (game.aiOpponent && game.connectTurn === 1) {
       const activeGame = game;
       window.setTimeout(function () {
-        if (game !== activeGame || currentScreen !== "game" || game.id !== "connect_four" || game.connectOver) return;
-        makeConnectDrop(chooseConnectColumn(game.connectBoard), true);
+        runAfterResume(activeGame, "connect_four", function () {
+          if (game.connectOver) return;
+          makeConnectDrop(chooseConnectColumn(game.connectBoard), true);
+        });
       }, 200);
     }
   }
@@ -1658,7 +1663,7 @@
     const bestScore = Number(highScores[game.id] || 0);
     const tournamentRibbon = game.tournament && tournament ? '<div class="tournament-ribbon"><span class="tournament-ribbon-label">TOURNAMENT · ROUND ' + game.round + ' / ' + tournament.rounds + '</span>' + game.players.map(function (p, i) { return '<span class="tournament-ribbon-score" style="--ribbon-color:' + colors[i] + '">P' + (i + 1) + ' <b>' + tournament.scores[i] + '</b></span>'; }).join('') + '</div>' : '';
     root.innerHTML = '<div class="game-shell">' +
-      '<div class="game-top"><button class="back-button" data-action="game-menu">← GAMES</button><div class="game-heading"><h1>' + g.title + '</h1><p>' + (game.tournament ? "TOURNAMENT · ROUND " + game.round + " / " + tournament.rounds : "QUICK PLAY · " + g.category) + '</p></div><div class="game-top-right"><span class="personal-best">BEST ' + bestScore + '</span>' + (isTimed ? '<span class="timer-chip" id="timer-value">' + fmtTime(game.timeLeft) + '</span>' : '<button class="sound-chip" data-action="sound">♫ SOUND</button>') + '</div></div>' +
+      '<div class="game-top"><button class="back-button" data-action="game-menu">← GAMES</button><div class="game-heading"><h1>' + g.title + '</h1><p>' + (game.tournament ? "TOURNAMENT · ROUND " + game.round + " / " + tournament.rounds : "QUICK PLAY · " + g.category) + '</p></div><div class="game-top-right"><span class="personal-best">BEST ' + bestScore + '</span>' + (isTimed ? '<span class="timer-chip" id="timer-value">' + fmtTime(game.timeLeft) + '</span>' : '') + '<button class="game-pause-button" data-action="pause-game" aria-label="Pause game" title="Pause game">Ⅱ</button></div></div>' +
       tournamentRibbon +
       '<div class="game-board">' + renderArenaContent() +
       '<div class="player-grid ' + (game.id === "block_battle" ? "block-score-panels" : (game.id === "orb_dash" ? "orb-player-panels" : "")) + '">' + game.players.map(function (p, i) {
@@ -1723,8 +1728,61 @@
       btn.title = settings.sound ? "Turn sound off" : "Turn sound on";
     }
   }
+  function runAfterResume(activeGame, gameId, callback) {
+    if (game !== activeGame || currentScreen !== "game" || game.id !== gameId) return;
+    if (game.isPaused) {
+      window.setTimeout(function () { runAfterResume(activeGame, gameId, callback); }, 100);
+      return;
+    }
+    callback();
+  }
+
+  function pauseGame() {
+    if (!game || currentScreen !== "game") return;
+    if (game.isPaused) { resumeGame(); return; }
+    game.isPaused = true;
+    stopTick();
+    clearRaceInput();
+    root.insertAdjacentHTML("beforeend",
+      '<div class="pause-overlay" role="dialog" aria-modal="true" aria-labelledby="pause-title">' +
+        '<div class="pause-card">' +
+          '<div class="pause-icon" aria-hidden="true">Ⅱ</div>' +
+          '<span class="pause-kicker">QUICK BREAK</span>' +
+          '<h2 id="pause-title">Game paused</h2>' +
+          '<p>Your score and current round are safe. Take a breath, then jump back in.</p>' +
+          '<div class="pause-actions">' +
+            '<button class="primary-button" data-action="pause-resume">RESUME GAME →</button>' +
+            '<button class="secondary-button" data-action="pause-restart">RESTART THIS GAME</button>' +
+            '<button class="pause-exit-button" data-action="game-menu">END GAME · BACK TO LIBRARY</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>');
+    sfx("ui");
+  }
+
+  function resumeGame() {
+    if (!game || !game.isPaused) return;
+    game.isPaused = false;
+    const overlay = root.querySelector(".pause-overlay");
+    if (overlay) overlay.remove();
+    lastTick = performance.now();
+    if (tickTimer === null) tickTimer = window.setInterval(tick, 33);
+    sfx("select");
+  }
+
+  function restartPausedGame() {
+    if (!game || currentScreen !== "game") return;
+    const gameId = game.id;
+    const inTournament = !!game.tournament;
+    startGame(gameId, inTournament);
+    sfx("select");
+  }
+
   function handleAction(action, el) {
-    if (action === "settings-open") renderSettingsModal();
+    if (action === "pause-game") { if (game && game.isPaused) resumeGame(); else pauseGame(); }
+    else if (action === "pause-resume") resumeGame();
+    else if (action === "pause-restart") restartPausedGame();
+    else if (action === "settings-open") renderSettingsModal();
     else if (action === "favorite") toggleFavorite(el.dataset.game);
     else if (action === "library-category") { activeCategory = el.dataset.value; renderGameSelect(); }
     else if (action === "library-reset") { libraryQuery = ""; activeCategory = "ALL"; librarySort = "featured"; renderGameSelect(); }
@@ -1899,30 +1957,65 @@
       renderGameSelect();
     }
   });
+  const pressedRaceKeys = new Set();
+  function syncRaceKeyboard() {
+    if (!game || currentScreen !== "game" || game.id !== "mini_racers" || !game.players[0]) return;
+    const left = pressedRaceKeys.has("arrowleft") || pressedRaceKeys.has("a");
+    const right = pressedRaceKeys.has("arrowright") || pressedRaceKeys.has("d");
+    const accelerate = pressedRaceKeys.has("arrowup") || pressedRaceKeys.has("w");
+    game.players[0].raceSteer = left === right ? 0 : (left ? -1 : 1);
+    game.players[0].joystickY = accelerate ? -1 : 0;
+    updateRaceTrack();
+  }
+
+  function clearRaceInput() {
+    pressedRaceKeys.clear();
+    Array.from(joystickPointerOwners.keys()).forEach(function (pointerId) { releaseJoystick(pointerId, true); });
+    racePointerOwners.clear();
+    if (game && game.id === "mini_racers") {
+      game.players.forEach(function (player) {
+        player.raceSteer = 0;
+        player.joystickX = 0;
+        player.joystickY = 0;
+        player.throttleButtonHeld = false;
+        player.throttle = false;
+      });
+      updateRaceTrack();
+    }
+  }
+
   document.addEventListener("keydown", function (event) {
     if (event.key === "Escape") {
-      closeSettingsModal();
-      if (game && currentScreen === "game" && !game.isPaused) {
-        // Escape is a safe way out; the menu action clears the live tick loop.
+      if (root.querySelector(".settings-modal")) {
+        closeSettingsModal();
+        event.preventDefault();
+        return;
+      }
+      if (game && currentScreen === "game") {
+        if (game.isPaused) resumeGame(); else pauseGame();
+        event.preventDefault();
+        return;
       }
     }
-    if (!game || currentScreen !== "game" || game.id !== "mini_racers") return;
+    if (!game || currentScreen !== "game" || game.id !== "mini_racers" || game.isPaused) return;
     const key = event.key.toLowerCase();
-    game.players.forEach(function (p, i) {
-      if ((key === "arrowleft" || key === "a") && i === 0) p.raceSteer = -1;
-      if ((key === "arrowright" || key === "d") && i === 0) p.raceSteer = 1;
-      if ((key === "arrowup" || key === "w") && i === 0) p.joystickY = -1;
-    });
-    if (["arrowleft","arrowright","arrowup","a","d","w"].includes(key)) { updateRaceTrack(); event.preventDefault(); }
-    if ((key === " " || key === "shift") && !event.repeat) playerAction(0);
+    const controlKeys = ["arrowleft","arrowright","arrowup","a","d","w"];
+    if (event.target && event.target.closest && event.target.closest("input,textarea,select,[contenteditable='true']")) return;
+    if (controlKeys.includes(key)) {
+      pressedRaceKeys.add(key);
+      syncRaceKeyboard();
+      event.preventDefault();
+    }
+    if ((key === " " || key === "shift") && !event.repeat) {
+      playerAction(0);
+      event.preventDefault();
+    }
   });
   document.addEventListener("keyup", function (event) {
-    if (!game || currentScreen !== "game" || game.id !== "mini_racers") return;
-    const key = event.key.toLowerCase();
-    if (["arrowleft","arrowright","a","d"].includes(key)) game.players[0].raceSteer = 0;
-    if (["arrowup","w"].includes(key)) game.players[0].joystickY = 0;
-    updateRaceTrack();
+    pressedRaceKeys.delete(event.key.toLowerCase());
+    if (game && currentScreen === "game" && game.id === "mini_racers") syncRaceKeyboard();
   });
+  window.addEventListener("blur", clearRaceInput);
   document.getElementById("settings-toggle").addEventListener("click", function () {
     renderSettingsModal();
     sfx("ui");
@@ -1936,12 +2029,21 @@
   document.addEventListener("visibilitychange", function () {
     if (document.hidden && game && currentScreen === "game") {
       toast("Paused while you were away.");
+      clearRaceInput();
       stopTick();
-    } else if (!document.hidden && game && currentScreen === "game" && !tickTimer) {
+    } else if (!document.hidden && game && currentScreen === "game" && !game.isPaused && !tickTimer) {
       lastTick = performance.now();
       tickTimer = window.setInterval(tick, 33);
     }
   });
+  if ("serviceWorker" in navigator && window.isSecureContext) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/service-worker.js", { updateViaCache: "none" }).catch(function () {
+        // The game remains playable online when service workers are unavailable.
+      });
+    });
+  }
+
   applySettings();
   renderHome();
 })();
