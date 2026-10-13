@@ -790,3 +790,26 @@ body{color:var(--ink);transition:background .25s ease,color .25s ease}
   .ttt-mark-svg,.ttt-win-line path{animation:none;stroke-dashoffset:0}
   .primary-button:after,.action-button:after{display:none}
 }
+
+
+/* Harmonize the remaining HUD and puzzle controls in dark appearance too. */
+:root[data-appearance="dark"] .step-mark,
+:root[data-appearance="dark"] .active-tag{background:color-mix(in srgb,var(--purple) 20%,#18243b);color:color-mix(in srgb,var(--purple) 74%,white);border:1px solid color-mix(in srgb,var(--purple) 32%,#344361)}
+:root[data-appearance="dark"] .timer-chip,
+:root[data-appearance="dark"] .tournament-icon,
+:root[data-appearance="dark"] .orb-leader{background:#202c47;border:1px solid #394967;color:color-mix(in srgb,var(--purple) 76%,white);box-shadow:0 6px 16px rgba(0,0,0,.18)}
+:root[data-appearance="dark"] .block-piece-button{background:linear-gradient(145deg,#202c46,#172238);border-color:#344361;color:#edf2ff;box-shadow:0 6px 15px rgba(0,0,0,.2)}
+:root[data-appearance="dark"] .block-piece-button.chosen{background:linear-gradient(145deg,color-mix(in srgb,var(--purple) 23%,#1a2540),#202b45);border-color:var(--purple);box-shadow:0 0 0 2px color-mix(in srgb,var(--purple) 20%,transparent),0 7px 18px rgba(0,0,0,.2)}
+:root[data-appearance="dark"] .block-game-footer span,
+:root[data-appearance="dark"] .tournament-ribbon-score{background:#202b43;border-color:#35435f;color:#bdc9e2}
+:root[data-appearance="dark"] .puzzle-player-badge{background:#202b43;color:color-mix(in srgb,var(--purple) 76%,white);border:1px solid #35435f}
+:root[data-appearance="dark"] .tournament-ribbon{background:#151f34;border-color:#2f3e5c;box-shadow:0 5px 16px rgba(0,0,0,.18)}
+:root[data-appearance="dark"] .block-tool-button{background:linear-gradient(145deg,#26334f,#1a2540);border-color:#3b4a69;color:#e8efff;box-shadow:0 3px 0 #10192b}
+:root[data-appearance="dark"] .block-tool-button.smart{background:linear-gradient(145deg,color-mix(in srgb,var(--purple) 30%,#1a2540),#202b45);color:#e7e2ff;border-color:color-mix(in srgb,var(--purple) 48%,#354361)}
+:root[data-appearance="dark"] .block-tool-button.place{background:linear-gradient(145deg,#1b6a55,#15483d);color:#d9fff1;border-color:#2e8a70}
+:root[data-appearance="dark"] .ttt-cell.marked-x{color:color-mix(in srgb,var(--purple) 76%,white)}
+:root[data-appearance="dark"] .ttt-cell.marked-x .ttt-mark-svg path{stroke:color-mix(in srgb,var(--purple) 76%,white)}
+:root[data-appearance="dark"] .board-turn-label{color:color-mix(in srgb,var(--purple) 76%,white)}
+:root[data-appearance="dark"] .race-scene-hud span:last-child{color:#c6d6ed}
+:root[data-appearance="dark"] .race-scene-hud span:first-child{color:#80f7e7}
+:root[data-appearance="dark"] .timer-chip:before{content:"";width:6px;height:6px;background:currentColor;border-radius:50%;box-shadow:0 0 12px currentColor}
