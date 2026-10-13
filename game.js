@@ -315,13 +315,17 @@
     });
     return best;
   }
+  function orientBlockPiece(piece, turns) {
+    if (!piece) return;
+    for (let i = 0; i < turns; i++) piece.cells = normalizeBlockCells(piece.cells.map(function (c) { return [-c[1], c[0]]; }));
+    piece.rotation = ((piece.rotation || 0) + turns) % 4;
+  }
   function rotateSelectedBlock() {
     if (!game || game.id !== "block_battle" || currentScreen !== "game") return;
     const player = game.players[game.activePuzzlePlayer];
     const piece = player.blockPieces[game.selectedPiece];
     if (!piece || piece.used) return;
-    piece.cells = normalizeBlockCells(piece.cells.map(function (c) { return [-c[1], c[0]]; }));
-    piece.rotation = (piece.rotation + 1) % 4;
+    orientBlockPiece(piece, 1);
     const move = findBestBlockMove(player, game.selectedPiece);
     if (move) player.blockCursor = { row: move.row, col: move.col };
     sfx("rotate");
@@ -334,10 +338,7 @@
     if (!move) { toast("No legal move left on this board."); sfx("error"); return; }
     game.selectedPiece = move.pieceIndex;
     const piece = player.blockPieces[move.pieceIndex];
-    if (piece) {
-      for (let r = 0; r < move.rotation; r++) piece.cells = normalizeBlockCells(piece.cells.map(function (c) { return [-c[1], c[0]]; }));
-      piece.rotation = move.rotation;
-    }
+    if (piece) orientBlockPiece(piece, move.rotation);
     player.blockCursor = { row: move.row, col: move.col };
     player.status = move.score >= 100 ? "SMART MOVE · LINE CLEAR!" : "SMART MOVE READY";
     sfx("hint");
@@ -581,7 +582,12 @@
     if (id === "block_battle") {
       game.players.forEach(function (p) {
         const opening = findBestBlockMove(p);
-        if (opening) p.blockCursor = { row: opening.row, col: opening.col };
+        if (opening) {
+          const piece = p.blockPieces[opening.pieceIndex];
+          orientBlockPiece(piece, opening.rotation);
+          p.blockCursor = { row: opening.row, col: opening.col };
+          if (game.activePuzzlePlayer === 0 && i === 0) game.selectedPiece = opening.pieceIndex;
+        }
       });
       game.players[0].status = "YOUR TURN — MAKE IT COUNT!";
       game.timeLeft = duration;
@@ -1151,7 +1157,10 @@
         game.selectedPiece = Number(el.dataset.piece);
         const player = game.players[game.activePuzzlePlayer];
         const move = findBestBlockMove(player, game.selectedPiece);
-        if (move) player.blockCursor = { row: move.row, col: move.col };
+        if (move) {
+          orientBlockPiece(player.blockPieces[game.selectedPiece], move.rotation);
+          player.blockCursor = { row: move.row, col: move.col };
+        }
         sfx("select");
         renderGame();
       }
