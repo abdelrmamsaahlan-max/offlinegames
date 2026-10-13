@@ -1153,49 +1153,42 @@
       }
       html = '<div class="arena-big">' + (game.phase === "memory_show" ? "WATCH!" : (game.phase === "memory_input" ? "YOUR TURN" : "NICE TRY")) + '</div><h2>' + (game.phase === "memory_show" ? "MEMORIZE THE PATTERN" : "REPEAT IT IN ORDER") + '</h2><p>Player ' + (game.memoryPlayer + 1) + " out of " + settings.players + '</p><div class="arena-grid">' + tiles + '</div>';
     } else if (id === "mini_racers") {
-      const laneHeight = 260 / settings.players;
-      const dividers = Array.from({length: settings.players - 1}, function(_, i) {
-        const y = Math.round((i + 1) * laneHeight);
-        return '<path d="M8 ' + y + ' H790" stroke="#93A4BD" stroke-width="2" stroke-dasharray="12 10" opacity=".7"/>';
+      const roadLeft = 120, roadWidth = 560, laneWidth = roadWidth / settings.players;
+      const laneLines = Array.from({ length: settings.players - 1 }, function (_, i) {
+        const x = roadLeft + laneWidth * (i + 1);
+        return '<path d="M' + x + ' 0 V380" stroke="#EAF0FF" stroke-width="3" stroke-dasharray="24 22" opacity=".48"/>';
       }).join("");
-      const hazards = (game.raceObstacles || []).map(function (lane, playerIndex) {
-        return lane.map(function (obstacle) {
-          if (obstacle.passed) return "";
-          const x = 68 + obstacle.progress;
-          const y = laneHeight * (playerIndex + 0.5) - 4 + obstacle.offset * 22;
-          return '<g class="race-obstacle" id="race-obstacle-' + playerIndex + '-' + obstacle.id + '" transform="translate(' + x + ' ' + y + ')"><ellipse cy="11" rx="9" ry="3" fill="#0b1221" opacity=".38"/><path d="M-8 10 L-4 -8 L4 -8 L8 10 Z" fill="#ff9a42" stroke="#fff" stroke-width="1"/><path d="M-6 2H6 M-5 -3H5" stroke="#fff" stroke-width="2.3"/><rect x="-10" y="9" width="20" height="3" rx="1.5" fill="#17213b"/></g>';
-        }).join("");
+      const roadside = Array.from({ length: 10 }, function (_, i) {
+        const y = -50 + i * 72;
+        return '<g><rect x="128" y="' + y + '" width="9" height="34" rx="3" fill="#FFE27A"/><rect x="663" y="' + y + '" width="9" height="34" rx="3" fill="#FFE27A"/></g>';
       }).join("");
-      const cars = game.players.map(function(p, i) {
-        const y = laneHeight * (i + 0.5) - 15 + p.raceSteer * 22;
-        return '<g id="race-car-' + i + '" class="race-car' + (p.raceSpeed > 4 ? ' car-moving' : '') + (p.raceSpeed > 48 ? ' car-boost' : '') + '" transform="translate(' + (68 + p.progress) + ' ' + y + ')">' +
-          '<path class="nitro-flame" d="M1 16 L-18 8 L-10 16 L-18 24 Z" fill="#ffe16b"/><ellipse cx="29" cy="30" rx="29" ry="5" fill="#071021" opacity=".42"/>' +
-          '<g class="race-wheel"><rect x="10" y="3" width="13" height="7" rx="2.5" fill="#0B1220" stroke="#91A2BD" stroke-width=".7"/><path d="M13 4V9 M18 4V9" stroke="#75849F" stroke-width="1"/></g>' +
-          '<g class="race-wheel"><rect x="10" y="23" width="13" height="7" rx="2.5" fill="#0B1220" stroke="#91A2BD" stroke-width=".7"/><path d="M13 24V29 M18 24V29" stroke="#75849F" stroke-width="1"/></g>' +
-          '<g class="race-wheel"><rect x="39" y="3" width="13" height="7" rx="2.5" fill="#0B1220" stroke="#91A2BD" stroke-width=".7"/><path d="M42 4V9 M47 4V9" stroke="#75849F" stroke-width="1"/></g>' +
-          '<g class="race-wheel"><rect x="39" y="23" width="13" height="7" rx="2.5" fill="#0B1220" stroke="#91A2BD" stroke-width=".7"/><path d="M42 24V29 M47 24V29" stroke="#75849F" stroke-width="1"/></g>' +
-          '<path d="M4 13 Q4 8 11 7 L19 5 Q23 1 30 1 Q37 1 41 5 L51 8 Q56 10 57 16 L56 21 Q55 26 49 27 H11 Q4 26 3 21 Z" fill="' + colors[i] + '" stroke="#F7FBFF" stroke-width="1.35"/>' +
-          '<path d="M9 11 L17 9 L19 7 Q27 3 35 6 L42 9 L50 11" fill="none" stroke="#FFFFFF" stroke-width="1.8" opacity=".48"/>' +
-          '<path d="M18 8 Q21 3 28 3 H34 Q40 4 44 9 L40 21 H20 Z" fill="#15243F" stroke="#E7F8FF" stroke-width="1.1"/>' +
-          '<path d="M21 8 Q25 5 29 5 H33 Q37 6 40 9 L38 14 H22 Z" fill="#B8EDFF" opacity=".95"/>' +
-          '<path d="M22 16 H39 L37 21 H23 Z" fill="#293C60"/>' +
-          '<path d="M5 12 L10 11 L10 14 L5 15 Z M5 20 L10 21 L10 24 L5 23 Z" fill="#FF6A7F"/>' +
-          '<path d="M51 11 L56 13 L56 16 L51 15 Z M51 20 L56 19 L56 22 L51 23 Z" fill="#FFF4B0" stroke="#FFE27A" stroke-width=".5"/>' +
-          '<path d="M47 9 L53 9 L55 11 L49 11 Z" fill="#FFFFFF" opacity=".55"/>' +
-          '<text x="30" y="19" font-size="9" text-anchor="middle" font-weight="1000" fill="#FFFFFF" stroke="#17213B" stroke-width=".3">' + (i + 1) + '</text>' +
-          '<path d="M9 27 H18 M42 27 H50" stroke="#D7E2F6" stroke-width="1.2" opacity=".6"/></g>';
+      const playerCars = game.players.map(function (p, i) {
+        const center = roadLeft + (i + 0.5) * laneWidth;
+        const x = center + p.raceSteer * laneWidth * 0.34;
+        const carName = ["car_red_1.png", "car_blue_1.png", "car_green_1.png", "car_black_1.png"][i];
+        const crashed = performance.now() < p.raceCrashUntil;
+        return '<g id="race-car-' + i + '" class="race-car' + (p.raceSpeed > 48 ? ' car-boost' : '') + (crashed ? ' car-crashed' : '') + '" transform="translate(' + x + ' 270)">' +
+          '<ellipse cx="0" cy="25" rx="23" ry="9" fill="#020816" opacity=".38"/>' +
+          '<image href="' + racingAsset(carName) + '" x="-24" y="-35" width="48" height="66" preserveAspectRatio="xMidYMid meet"/>' +
+          '<circle cx="0" cy="-23" r="10" fill="' + colors[i] + '" stroke="#FFFFFF" stroke-width="2"/><text x="0" y="-19" font-size="10" text-anchor="middle" font-weight="1000" fill="#18203A">' + (i + 1) + '</text>' +
+          '<path class="race-crash-flash" d="M-35 -5 L-21 -1 M35 -5 L21 -1" stroke="#FF5D7D" stroke-width="4" stroke-linecap="round"/></g>';
       }).join("");
-      html = '<div class="race-scene"><div class="race-scene-hud"><span>🏁 FIRST TO THE LINE WINS</span><span id="race-hud-status">STEER AROUND CONES · PUSH UP TO ACCELERATE</span></div>' +
-        '<svg id="race-track" class="race-track" viewBox="0 0 800 260" role="img" aria-label="Arcade race with steering, moving cars, road cones and finish line" preserveAspectRatio="none">' +
-        '<defs><linearGradient id="raceRoad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#27334C"/><stop offset="100%" stop-color="#111A2E"/></linearGradient><linearGradient id="raceGrass" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#72D9A2"/><stop offset="100%" stop-color="#2E9E7A"/></linearGradient><pattern id="raceGrassPattern" width="18" height="18" patternUnits="userSpaceOnUse"><path d="M0 18 L18 0" stroke="#D4FFE8" stroke-width="2" opacity=".25"/></pattern><pattern id="raceDash" width="44" height="12" patternUnits="userSpaceOnUse"><rect x="4" y="4" width="26" height="4" rx="2" fill="#F8FAFC" opacity=".48"/></pattern></defs>' +
-        '<rect x="0" y="0" width="800" height="260" rx="16" fill="url(#raceGrass)"/><rect x="6" y="6" width="788" height="248" rx="14" fill="url(#raceGrassPattern)"/>' +
-        '<rect x="18" y="10" width="764" height="240" rx="13" fill="url(#raceRoad)" stroke="#E8F1FF" stroke-width="3"/>' +
-        '<path d="M27 18 H773 M27 242 H773" stroke="#fff" stroke-width="3" opacity=".9"/><rect x="27" y="0" width="746" height="260" fill="url(#raceDash)" opacity=".24"/>' +
-        dividers + hazards +
-        '<path d="M68 12 V248" stroke="#ffe16b" stroke-width="5" stroke-dasharray="8 6"/>' +
-        '<path d="M735 12 V248" stroke="#fff" stroke-width="6" stroke-dasharray="8 5"/>' +
-        '<text x="40" y="30" font-size="10" font-weight="900" fill="#fff">START</text><text x="700" y="30" font-size="10" font-weight="900" fill="#fff">FINISH</text>' +
-        cars + '</svg></div>';
+      const traffic = (game.raceTraffic || []).map(function (car) {
+        if (car.y < -90 || car.y > 420) return "";
+        const cx = roadLeft + (car.lane + 0.5) * laneWidth + car.offset * laneWidth * 0.34;
+        const carFiles = { red: "car_red_2.png", blue: "car_blue_2.png", green: "car_green_2.png", black: "car_black_2.png" };
+        const file = carFiles[car.color] || carFiles.blue;
+        return '<g id="traffic-car-' + car.id + '" class="traffic-car' + (car.resolved ? " traffic-resolved" : "") + '" transform="translate(' + cx + ' ' + car.y + ')"><ellipse cx="0" cy="19" rx="22" ry="7" fill="#030918" opacity=".32"/><image href="' + racingAsset(file) + '" x="-22" y="-31" width="44" height="61" preserveAspectRatio="xMidYMid meet"/><path d="M-13 -14 H13" stroke="#FFFFFF" stroke-width="2" opacity=".65"/></g>';
+      }).join("");
+      html = '<div class="race-scene"><div class="race-scene-hud"><span>🚦 TRAFFIC RUSH</span><span id="race-hud-status">STEER TO DODGE · PUSH UP TO ACCELERATE</span></div>' +
+        '<div class="race-scene-hud race-sub-hud"><span id="race-level">LEVEL 1 · EASY TRAFFIC</span><span id="race-clean-passes">0 CLEAN PASSES</span></div>' +
+        '<svg id="race-track" class="race-track traffic-track" viewBox="0 0 800 380" role="img" aria-label="Vertical scrolling traffic race with cars to dodge" preserveAspectRatio="xMidYMid meet">' +
+        '<defs><linearGradient id="raceGrass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#247C68"/><stop offset="1" stop-color="#0E5148"/></linearGradient><linearGradient id="raceRoad" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#171F34"/><stop offset=".5" stop-color="#2B354C"/><stop offset="1" stop-color="#171F34"/></linearGradient><pattern id="roadTexture" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M0 24 L24 0" stroke="#FFFFFF" stroke-width="1" opacity=".035"/></pattern></defs>' +
+        '<rect width="800" height="380" rx="18" fill="url(#raceGrass)"/><rect x="92" y="-4" width="616" height="388" rx="9" fill="#F6F8FC" opacity=".1"/><rect x="120" y="0" width="560" height="380" fill="url(#raceRoad)"/><rect x="120" y="0" width="560" height="380" fill="url(#roadTexture)"/>' +
+        '<path d="M120 0V380 M680 0V380" stroke="#FFE27A" stroke-width="5"/>' + laneLines +
+        '<g id="road-dash-marks">' + roadside + '</g>' +
+        '<path d="M100 0V380 M700 0V380" stroke="#D0D8E9" stroke-width="3" stroke-dasharray="10 10" opacity=".24"/>' +
+        traffic + playerCars + '</svg><div class="race-bottom-tip">The road gets busier every 5 seconds. Change lanes early, not at the last second.</div></div>';
     } else if (id === "block_battle") {
       const player = game.players[game.activePuzzlePlayer];
       const cursor = player.blockCursor || { row: 3, col: 3 };
