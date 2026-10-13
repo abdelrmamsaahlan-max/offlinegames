@@ -174,3 +174,224 @@ body{background:radial-gradient(ellipse at 2% 7%,rgba(90,74,232,.10),transparent
  .tournament-ribbon-label{width:100%;text-align:center;font-size:8px}
  .tournament-ribbon-score{font-size:9px;padding:4px 7px}
 }
+
+
+/* Pocket Party Arcade pass — richer contrast, tactile controls, and motion. */
+:root{
+  --ink:#111a31;--muted:#65718b;--paper:#eef3ff;--purple:#5745ef;--purple-dark:#3926ba;
+  --line:#dfe6f5;--cyan:#37d9f2;--pink:#ff5d7d;--yellow:#ffc857;--green:#40e0a0;
+  --orange:#ff9c51;--shadow:0 22px 60px rgba(19,31,67,.12);--radius:25px;
+}
+body{
+  background:
+    radial-gradient(ellipse at 4% 7%,rgba(113,93,255,.13),transparent 27%),
+    radial-gradient(ellipse at 92% 24%,rgba(55,217,242,.13),transparent 30%),
+    radial-gradient(ellipse at 64% 95%,rgba(64,224,160,.10),transparent 25%),
+    #eef3ff;
+}
+button{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease,border-color .16s ease}
+.primary-button{background:linear-gradient(135deg,#ffe27a,#ffc857);box-shadow:0 5px 0 #dda83c,0 12px 24px rgba(207,158,33,.2)}
+.hero-card{background:radial-gradient(circle at 90% 7%,rgba(113,230,255,.22),transparent 27%),linear-gradient(145deg,#6758f5,#4731ca 62%,#291e8b);box-shadow:0 20px 46px rgba(68,50,192,.27)}
+.hero-card h1 span{color:#ffe27a;text-shadow:0 3px 24px rgba(255,226,122,.23)}
+.settings-card,.game-card,.game-board,.result-card{box-shadow:0 18px 48px rgba(26,38,78,.09)}
+.game-card{position:relative;isolation:isolate;border-color:#e2e8fa}
+.game-card:before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(115deg,transparent 24%,rgba(255,255,255,.75) 48%,transparent 70%);transform:translateX(-120%);z-index:1;pointer-events:none}
+.game-card:hover:before{animation:card-shine .65s ease}
+.game-card:hover{transform:translateY(-6px) rotate(-.35deg);box-shadow:0 22px 45px rgba(31,43,89,.15);border-color:#c8c8ff}
+.game-art{background:linear-gradient(135deg,#eff1ff,#dfe7ff);box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+.game-art svg{filter:drop-shadow(0 9px 8px rgba(28,40,76,.09));transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+.game-card:hover .game-art svg{transform:scale(1.055) rotate(-1deg)}
+.game-shell{animation:arcade-in .32s ease both}
+.game-top{margin-bottom:19px}
+.game-heading h1{font-size:clamp(22px,3vw,31px);background:linear-gradient(90deg,#151d3a,#5343e9);background-clip:text;-webkit-background-clip:text;color:transparent}
+.back-button,.sound-chip,.icon-button{transition:transform .15s ease,background .15s ease,box-shadow .15s ease}
+.back-button:hover,.sound-chip:hover,.icon-button:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(41,52,93,.1)}
+.game-board{border:1px solid rgba(255,255,255,.92);background:linear-gradient(155deg,rgba(255,255,255,.98),rgba(248,250,255,.94));}
+.arena{isolation:isolate;background:linear-gradient(140deg,var(--arena-bg,#eef2ff),#fff 130%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.85)}
+.arena:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse at 50% 0,rgba(255,255,255,.56),transparent 65%),linear-gradient(120deg,transparent 20%,rgba(255,255,255,.14) 47%,transparent 72%);background-size:auto,230% 100%;animation:arena-sheen 6.8s ease-in-out infinite}
+.arena-center{z-index:1}
+.arena-big{text-shadow:0 4px 0 rgba(22,31,62,.06),0 9px 26px rgba(84,69,239,.13);animation:arena-bob 2.3s ease-in-out infinite alternate}
+.arena-symbols{animation:symbol-bounce 1.2s ease-in-out infinite alternate}
+.arena-tile{box-shadow:0 7px 0 rgba(23,35,62,.13),0 10px 18px rgba(31,44,82,.08);transform:translateY(0);transition:transform .12s ease,filter .12s ease}
+.arena-tile.lit{box-shadow:0 7px 0 rgba(23,35,62,.1),0 0 0 4px rgba(255,255,255,.85),0 0 25px rgba(255,255,255,.72);animation:tile-pop .32s ease}
+.player-panel{
+  position:relative;overflow:hidden;min-height:104px;
+  grid-template-columns:minmax(78px,.8fr) minmax(135px,1.2fr);
+  border-radius:19px;border-color:rgba(255,255,255,.88);
+  box-shadow:0 7px 18px rgba(28,41,80,.055),inset 0 1px 0 rgba(255,255,255,.85);
+  transition:transform .16s ease,box-shadow .16s ease,outline-color .16s ease;
+}
+.player-panel:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--player-color);opacity:.9}
+.player-panel.active-turn{outline:2px solid var(--player-color);box-shadow:0 0 0 5px color-mix(in srgb,var(--player-color),transparent 86%),0 9px 23px rgba(28,41,80,.08);transform:translateY(-1px)}
+.player-badge{font-size:10px;letter-spacing:.65px}
+.player-dot{box-shadow:0 0 0 4px color-mix(in srgb,var(--player-color),transparent 82%);border-radius:50%}
+.player-status{font-size:10px;color:#4c5a78}
+.player-points{color:#66738e}
+.panel-controls{display:flex;align-items:center;justify-content:center;min-width:0;gap:8px}
+.universal-controls .action-button{flex:1;min-width:0;min-height:68px;padding:8px 5px;border-radius:15px;border:1px solid rgba(255,255,255,.65);box-shadow:0 5px 0 color-mix(in srgb,var(--player-color),#101830 23%),0 8px 16px color-mix(in srgb,var(--player-color),transparent 80%);background:linear-gradient(145deg,color-mix(in srgb,var(--player-color),white 10%),var(--player-color));font-size:11px;letter-spacing:.35px;text-shadow:0 1px 1px rgba(0,0,0,.08)}
+.universal-controls .action-button:active{transform:translateY(3px) scale(.985)}
+.joystick-control{
+  position:relative;display:block;flex-shrink:0;border:2px solid rgba(255,255,255,.9);
+  background:radial-gradient(circle at 35% 25%,#fff 0,#e4e9fa 32%,#cbd4ec 72%,#b6c1e0 100%);
+  box-shadow:inset 0 5px 10px rgba(37,48,86,.13),0 6px 14px rgba(36,48,91,.12);
+  touch-action:none;user-select:none;-webkit-user-select:none;overscroll-behavior:contain;
+  transition:filter .12s,box-shadow .12s;outline:none;
+}
+.joystick-control:before{content:"";position:absolute;inset:6px;border-radius:50%;border:1px solid rgba(91,105,149,.13);pointer-events:none}
+.joystick-control:active{filter:brightness(1.04);box-shadow:inset 0 5px 10px rgba(37,48,86,.15),0 2px 5px rgba(36,48,91,.12)}
+.joystick-ring{inset:12px;border:2px dashed rgba(84,100,151,.26);animation:stick-turn 16s linear infinite}
+.joystick-knob{
+  background:radial-gradient(circle at 32% 23%,#b7f6ff 0,#766bff 37%,#4e39da 100%);
+  border:3px solid rgba(255,255,255,.96);box-shadow:0 4px 8px rgba(49,39,152,.35),inset 0 2px 0 rgba(255,255,255,.42);
+}
+.joystick-hint{font-size:7px;letter-spacing:.7px;bottom:-16px;color:#64718e}
+.party-joystick{width:68px;height:68px}
+.party-joystick .joystick-knob{width:29px;height:29px}
+.orb-stick{width:96px;height:96px}
+.color-stick{width:64px;height:64px}
+.color-stick .joystick-knob{width:26px;height:26px}
+.block-stick{width:74px;height:74px}
+.block-player-controls{display:flex;align-items:center;justify-content:space-evenly;gap:7px;min-width:0}
+.control-caption{font-size:8px;font-weight:1000;line-height:1.55;letter-spacing:.25px;color:#67738f}
+.dual-controls{display:grid;grid-template-columns:minmax(72px,1fr) 64px;gap:8px;align-items:center}
+.dual-controls .color-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.dual-controls .color-button{min-width:0;min-height:30px;border-radius:8px;font-size:10px;border:2px solid rgba(255,255,255,.85);box-shadow:0 3px 0 rgba(23,35,62,.11),0 4px 8px rgba(26,41,83,.08)}
+.dual-controls .color-button:active{transform:scale(.94)}
+.color-button:not(:disabled):hover{filter:brightness(1.07);transform:translateY(-2px)}
+.game-tip{color:#6d7891;font-size:10px;letter-spacing:.08px;padding:4px 12px 0}
+.timer-chip{background:linear-gradient(135deg,#f4f1ff,#fff);border:1px solid #dcd7ff;color:#4b3add;box-shadow:0 5px 15px rgba(85,69,239,.12);font-variant-numeric:tabular-nums}
+.timer-chip:before{content:"●";font-size:8px;color:#ff5d7d;animation:timer-blink 1s infinite}
+.result-row{border:1px solid #e6ebf8;box-shadow:0 4px 13px rgba(20,30,66,.035);transition:transform .16s ease,box-shadow .16s ease}
+.result-row:hover{transform:translateX(3px);box-shadow:0 8px 17px rgba(20,30,66,.08)}
+.result-banner{background:radial-gradient(circle at 90% 0,rgba(111,93,255,.14),transparent 40%),linear-gradient(130deg,#f0edff,#eef6ff)}
+/* Smarter Block Battle controls and 3D-feeling pieces. */
+.block-game-layout{max-width:960px}
+.block-game-intro strong{font-size:clamp(16px,2vw,21px);color:#18203d}
+.block-game-intro>span:last-child{max-width:640px}
+.block-game-main{grid-template-columns:minmax(240px,400px) minmax(195px,1fr);max-width:720px;gap:20px}
+.block-board{
+  gap:4px;padding:8px;border-radius:18px;border:1px solid #141c32;
+  background:linear-gradient(145deg,#111b32,#202e4f);box-shadow:0 18px 36px rgba(11,21,45,.23),inset 0 1px 0 rgba(255,255,255,.12);
+}
+.block-cell{
+  position:relative;overflow:visible;border-radius:5px;background:linear-gradient(145deg,#334261,#293754);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.06),inset 0 -2px 0 rgba(9,17,34,.17);
+  outline:0;transition:background .1s,filter .1s,transform .1s,box-shadow .1s;
+}
+.block-cell.filled{
+  background:linear-gradient(145deg,color-mix(in srgb,var(--block-color),white 15%),var(--block-color) 58%,color-mix(in srgb,var(--block-color),#131b32 15%));
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.53),inset 0 -3px 0 rgba(13,24,48,.24),0 2px 3px rgba(0,0,0,.14);
+}
+.block-cell.ghost-valid{background:color-mix(in srgb,var(--block-color),white 18%);outline:2px solid #fff;outline-offset:-3px;box-shadow:0 0 12px color-mix(in srgb,var(--block-color),transparent 28%);z-index:2}
+.block-cell.ghost-invalid{background:linear-gradient(145deg,#ff8f9f,#d93258);outline:2px solid #fff;outline-offset:-3px;opacity:.8;z-index:2}
+.block-cell.cursor-anchor{outline:2px solid #ffe27a;outline-offset:-2px;z-index:3}
+.block-cell.place-pop{animation:block-place-pop .28s cubic-bezier(.2,.85,.3,1.3) both}
+.block-cell.line-flash{animation:block-line-flash .42s ease both}
+.block-side-panel{display:flex;flex-direction:column;gap:13px;min-width:0}
+.block-piece-tray{gap:9px}
+.block-piece-button{
+  border:1px solid #e2e7f5;background:linear-gradient(140deg,#fff,#f4f6ff);
+  min-height:72px;border-radius:15px;padding:9px 11px;
+  box-shadow:0 7px 15px rgba(24,38,77,.07),inset 0 1px 0 #fff;
+}
+.block-piece-button.chosen{border:2px solid var(--purple);background:linear-gradient(135deg,#f4f1ff,#fff);box-shadow:0 0 0 4px rgba(87,69,239,.1),0 8px 17px rgba(87,69,239,.1)}
+.block-piece-button.dragging{opacity:.7;transform:scale(.97)}
+.block-piece-button.used{opacity:.34}
+.piece-preview{gap:3px}
+.piece-preview span{width:16px;height:16px;border-radius:4px;background:linear-gradient(145deg,color-mix(in srgb,var(--block-color),white 16%),var(--block-color));box-shadow:inset 0 2px 0 rgba(255,255,255,.52),inset 0 -2px 0 rgba(0,0,0,.16),0 1px 2px rgba(20,30,60,.12)}
+.block-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.block-tool-button{
+  min-height:38px;border:1px solid #dfe5f4;border-radius:11px;padding:8px 7px;
+  background:linear-gradient(145deg,#fff,#edf1ff);color:#3e4968;font-size:9px;font-weight:1000;letter-spacing:.35px;
+  box-shadow:0 3px 0 #dae1f1;white-space:nowrap;
+}
+.block-tool-button:hover{transform:translateY(-2px);border-color:#bbb4ff;box-shadow:0 5px 0 #dae1f1}
+.block-tool-button:active{transform:translateY(2px);box-shadow:none}
+.block-tool-button.smart{background:linear-gradient(135deg,#eeeaff,#dcd6ff);border-color:#c5bdff;color:#4531d2}
+.block-tool-button.place{grid-column:1/-1;background:linear-gradient(135deg,#d9fff0,#9ceecb);border-color:#85ddb4;color:#126544}
+.block-game-footer span{border-radius:12px;box-shadow:0 3px 9px rgba(25,38,74,.04)}
+/* Racing: spinning wheels, responsive hazards, speed bursts, and clear lane feedback. */
+.racing-arena{background:linear-gradient(140deg,#effff8,#eaf0ff);height:auto;min-height:315px}
+.racing-arena .arena-center{padding:15px}
+.race-scene{width:min(980px,100%)}
+.race-scene-hud{color:#d5e2ff;font-size:10px;letter-spacing:.8px}
+.race-scene-hud span:first-child{color:#ffe27a}
+.race-track{height:auto;max-height:none;filter:drop-shadow(0 13px 18px rgba(12,23,49,.22))}
+.race-wheel{transform-box:fill-box;transform-origin:center;animation:race-wheel-spin .34s linear infinite}
+.race-car{filter:drop-shadow(0 3px 2px rgba(0,0,0,.15))}
+.race-car.car-boost{filter:drop-shadow(0 0 8px rgba(255,224,122,.85))}
+.nitro-flame{opacity:0;transform-origin:right center}
+.race-car.car-boost .nitro-flame{opacity:1;animation:nitro-flicker .1s steps(2,end) infinite}
+.race-obstacle{filter:drop-shadow(0 3px 2px rgba(0,0,0,.24));animation:cone-wobble 1.1s ease-in-out infinite alternate}
+.race-obstacle.is-passed{opacity:0;transition:opacity .18s ease}
+.racing-arena .arena-pattern{opacity:.05}
+.race-scene:after{content:"";display:block;position:absolute;pointer-events:none;left:0;right:0;top:46px;height:60%;opacity:.16;background:repeating-linear-gradient(100deg,transparent 0 45px,rgba(255,255,255,.8) 47px 49px,transparent 51px 95px);mask-image:linear-gradient(90deg,transparent,#000 35%,transparent 95%);animation:speed-lines 1.2s linear infinite}
+.player-panel .action-button.racing-active{box-shadow:0 0 0 3px rgba(255,255,255,.9),0 0 22px color-mix(in srgb,var(--player-color),transparent 40%)}
+.race-track .race-obstacle{transition:opacity .2s,filter .2s}
+/* Orb Dash looks like an illuminated tabletop arena; gems and players float independently. */
+.orb-arena{background:linear-gradient(135deg,#dce7ff,#f8e5ff);border:1px solid #d8ddfc}
+.orb-arena-field{height:clamp(230px,32vw,310px);border-color:rgba(255,255,255,.98);box-shadow:inset 0 0 0 1px rgba(12,23,44,.45),0 14px 27px rgba(27,38,66,.18)}
+.orb-arena-field:before{background-image:linear-gradient(rgba(255,255,255,.065) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.065) 1px,transparent 1px),radial-gradient(rgba(255,255,255,.2) 1px,transparent 1px);background-size:28px 28px,28px 28px,19px 19px}
+.orb-gem{animation:gem-float .7s ease-in-out infinite alternate;box-shadow:0 0 0 7px rgba(255,223,98,.14),0 0 30px rgba(255,223,98,.7),0 4px 12px rgba(0,0,0,.24)}
+.orb-player{box-shadow:0 5px 12px rgba(0,0,0,.3),inset 0 -3px 0 rgba(0,0,0,.13),0 0 0 4px color-mix(in srgb,var(--orb-color),transparent 78%);transition:left .06s linear,top .06s linear;animation:orb-hover 1.7s ease-in-out infinite alternate}
+.orb-player:nth-of-type(even){animation-delay:-.8s}
+/* Shared animation language across every round. */
+@keyframes arcade-in{from{opacity:0;transform:translateY(9px) scale(.992)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes card-shine{0%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+@keyframes arena-sheen{0%,100%{background-position:center,0% 0}50%{background-position:center,100% 0}}
+@keyframes arena-bob{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+@keyframes symbol-bounce{from{transform:translateY(0) scale(1)}to{transform:translateY(-4px) scale(1.015)}}
+@keyframes tile-pop{0%{transform:scale(.92)}70%{transform:scale(1.15)}100%{transform:scale(1.08)}}
+@keyframes timer-blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes stick-turn{to{transform:rotate(360deg)}}
+@keyframes race-wheel-spin{to{transform:rotate(360deg)}}
+@keyframes nitro-flicker{0%{transform:scaleX(.8) scaleY(.8)}100%{transform:scaleX(1.25) scaleY(1.2)}}
+@keyframes cone-wobble{from{transform:translateY(-1px) rotate(-2deg)}to{transform:translateY(1px) rotate(2deg)}}
+@keyframes speed-lines{from{background-position:0 0}to{background-position:160px 0}}
+@keyframes block-place-pop{0%{transform:scale(.65);filter:brightness(1.8)}75%{transform:scale(1.06)}100%{transform:scale(1);filter:brightness(1)}}
+@keyframes block-line-flash{0%{background:#fff;filter:brightness(2.8);transform:scale(.94)}55%{background:#ffe27a;filter:brightness(1.7)}100%{background:#334261;filter:brightness(1);transform:scale(1)}}
+@keyframes gem-float{from{transform:translate(-50%,-50%) rotate(-8deg) scale(.94);filter:brightness(1)}to{transform:translate(-50%,-50%) rotate(8deg) scale(1.08);filter:brightness(1.22)}}
+@keyframes orb-hover{from{margin-top:-1px}to{margin-top:2px}}
+@media(max-width:760px){
+  .player-panel{grid-template-columns:minmax(77px,.75fr) minmax(0,1.25fr);gap:7px;padding:8px;min-height:103px}
+  .player-id{padding:3px 5px}
+  .universal-controls{gap:6px}
+  .universal-controls .action-button{font-size:9px;letter-spacing:0;min-height:60px}
+  .party-joystick{width:59px;height:59px}
+  .party-joystick .joystick-knob{width:26px;height:26px}
+  .dual-controls{grid-template-columns:minmax(55px,1fr) 56px;gap:5px}
+  .color-stick{width:56px;height:56px}
+  .dual-controls .color-button{min-height:27px;padding:0}
+  .block-player-controls{flex-direction:column;gap:5px}
+  .block-stick{width:62px;height:62px}
+  .control-caption{display:none}
+  .block-game-main{grid-template-columns:minmax(0,1fr);gap:12px;max-width:500px}
+  .block-side-panel{gap:10px}
+  .block-piece-tray{flex-direction:row;align-items:stretch}
+  .block-piece-button{flex:1;min-width:0;flex-direction:column;justify-content:center;min-height:74px;padding:6px;gap:5px}
+  .piece-caption{font-size:7px}
+  .piece-preview span{width:14px;height:14px}
+  .block-tools{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .block-tool-button{font-size:8px;white-space:normal}
+  .block-tool-button.place{grid-column:auto}
+  .race-scene-hud{font-size:8px;letter-spacing:.2px}
+  .racing-arena{min-height:260px}
+  .race-scene:after{top:35px}
+  .orb-stick{width:84px;height:84px}
+}
+@media(max-width:430px){
+  .player-panel{grid-template-columns:minmax(70px,.76fr) minmax(0,1.24fr);gap:5px;padding:7px}
+  .player-badge{font-size:9px}
+  .player-status{font-size:9px}
+  .player-points{font-size:8px}
+  .universal-controls .action-button{font-size:8px;min-height:54px}
+  .party-joystick{width:51px;height:51px}
+  .party-joystick .joystick-knob{width:23px;height:23px}
+  .dual-controls{grid-template-columns:minmax(48px,1fr) 49px}
+  .color-stick{width:49px;height:49px}
+  .joystick-hint{font-size:6px;bottom:-14px}
+  .game-tip{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
+}
