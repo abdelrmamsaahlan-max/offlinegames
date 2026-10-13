@@ -948,6 +948,7 @@
       const car = document.getElementById("race-car-" + i);
       if (car) {
         car.setAttribute("transform", "translate(" + (68 + p.progress) + " " + (laneHeight * (i + 0.5) - 15 + p.raceSteer * 22) + ")");
+        car.classList.toggle("car-moving", p.raceSpeed > 4);
         car.classList.toggle("car-boost", p.raceSpeed > 48 || performance.now() < p.boostFlash);
       }
       (game.raceObstacles[i] || []).forEach(function (obstacle) {
@@ -1066,7 +1067,7 @@
       }).join("");
       const cars = game.players.map(function(p, i) {
         const y = laneHeight * (i + 0.5) - 15 + p.raceSteer * 22;
-        return '<g id="race-car-' + i + '" class="race-car' + (p.raceSpeed > 48 ? ' car-boost' : '') + '" transform="translate(' + (68 + p.progress) + ' ' + y + ')">' +
+        return '<g id="race-car-' + i + '" class="race-car' + (p.raceSpeed > 4 ? ' car-moving' : '') + (p.raceSpeed > 48 ? ' car-boost' : '') + '" transform="translate(' + (68 + p.progress) + ' ' + y + ')">' +
           '<path class="nitro-flame" d="M1 16 L-18 8 L-10 16 L-18 24 Z" fill="#ffe16b"/><ellipse cx="29" cy="30" rx="29" ry="5" fill="#071021" opacity=".42"/>' +
           '<g class="race-wheel"><rect x="10" y="3" width="13" height="7" rx="2.5" fill="#0B1220" stroke="#91A2BD" stroke-width=".7"/><path d="M13 4V9 M18 4V9" stroke="#75849F" stroke-width="1"/></g>' +
           '<g class="race-wheel"><rect x="10" y="23" width="13" height="7" rx="2.5" fill="#0B1220" stroke="#91A2BD" stroke-width=".7"/><path d="M13 24V29 M18 24V29" stroke="#75849F" stroke-width="1"/></g>' +
@@ -1249,7 +1250,7 @@
       const pieceIndex = Number(puzzlePiece.dataset.piece);
       if (game.players[game.activePuzzlePlayer].blockPieces[pieceIndex] && !game.players[game.activePuzzlePlayer].blockPieces[pieceIndex].used) {
         game.selectedPiece = pieceIndex;
-        activeBlockDrag = { pointerId: event.pointerId, pieceIndex: pieceIndex };
+        activeBlockDrag = { pointerId: event.pointerId, pieceIndex: pieceIndex, button: puzzlePiece };
         puzzlePiece.classList.add("dragging");
         sfx("select");
       }
@@ -1304,18 +1305,29 @@
   document.addEventListener("pointerup", function (event) {
     releaseJoystick(event.pointerId, false);
     if (activeBlockDrag && activeBlockDrag.pointerId === event.pointerId) {
+      const drag = activeBlockDrag;
       const under = document.elementFromPoint(event.clientX, event.clientY);
       const cell = under && typeof under.closest === "function" ? under.closest('[data-action="block-place"]') : null;
+      if (drag.button) drag.button.classList.remove("dragging");
       if (cell && currentScreen === "game" && game && game.id === "block_battle") {
-        game.selectedPiece = activeBlockDrag.pieceIndex;
+        game.selectedPiece = drag.pieceIndex;
+        const player = game.players[game.activePuzzlePlayer];
+        const beforeScore = player.blockScore;
         placeBlockPiece(Number(cell.dataset.row), Number(cell.dataset.col));
+        if (player.blockScore === beforeScore) renderGame();
+      } else if (currentScreen === "game" && game && game.id === "block_battle") {
+        renderGame();
       }
       activeBlockDrag = null;
     }
   });
   document.addEventListener("pointercancel", function (event) {
     releaseJoystick(event.pointerId, true);
-    if (activeBlockDrag && activeBlockDrag.pointerId === event.pointerId) activeBlockDrag = null;
+    if (activeBlockDrag && activeBlockDrag.pointerId === event.pointerId) {
+      if (activeBlockDrag.button) activeBlockDrag.button.classList.remove("dragging");
+      activeBlockDrag = null;
+      if (currentScreen === "game" && game && game.id === "block_battle") renderGame();
+    }
   });
   function releaseRacePointer(event) {
     if (!racePointerOwners.has(event.pointerId)) return;
