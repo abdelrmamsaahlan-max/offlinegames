@@ -17,7 +17,9 @@
     { id: "block_battle", title: "Block Battle", category: "PUZZLE", desc: "Place glossy blocks, plan clears, and build giant combos.", color: "#4d8dff", soft: "#e9f1ff", length: "35 SEC EACH" },
     { id: "orb_dash", title: "Orb Dash", category: "MOVEMENT", desc: "Steer your orb, grab gems, and dodge rivals.", color: "#7d65f2", soft: "#eeebff", length: "30 SEC" },
     { id: "star_snatch", title: "Star Snatch", category: "TIMING", desc: "Tap when the moving star hits the sweet spot.", color: "#f6bd43", soft: "#fff5d7", length: "15 SEC" },
-    { id: "stack_tower", title: "Stack Tower", category: "SKILL", desc: "Drop moving blocks, keep your tower balanced, and climb.", color: "#5a9cff", soft: "#eaf3ff", length: "8 SEC PER PLAYER" }
+    { id: "stack_tower", title: "Stack Tower", category: "SKILL", desc: "Drop moving blocks, keep your tower balanced, and climb.", color: "#5a9cff", soft: "#eaf3ff", length: "8 SEC PER PLAYER" },
+    { id: "tic_tac_toe", title: "Tic-Tac-Toe", category: "CLASSIC", desc: "Outsmart a friend or challenge a perfect-play bot.", color: "#47c995", soft: "#e1f8ed", length: "FIRST TO 3" },
+    { id: "connect_four", title: "Connect Four", category: "STRATEGY", desc: "Drop discs, block threats, and connect four in a row.", color: "#4d8dff", soft: "#e9f1ff", length: "TURN BASED" }
   ];
   // Deliberately varied, normalized polyominoes from 1–5 cells. Pieces rotate in play.
   const BLOCK_SHAPES = [
@@ -30,7 +32,9 @@
     [[1,0],[0,1],[1,1],[1,2],[2,2]], [[0,0],[1,0],[2,0],[0,1],[1,1]],
     [[0,0],[1,0],[2,0],[2,1],[2,2]], [[0,0],[0,1],[0,2],[1,0],[1,1]]
   ];
-  let settings = { players: 2, rounds: 5, sound: true, theme: "nebula", difficulty: "normal", motion: true };
+  let settings = { players: 2, rounds: 5, sound: true, theme: "nebula", difficulty: "normal", motion: true, appearance: "light", accent: "#5848d8" };
+  let libraryQuery = "", activeCategory = "ALL", librarySort = "featured";
+  let favoriteIds = [], recentGames = [];
   let currentScreen = "home";
   let game = null;
   let tournament = null;
@@ -46,10 +50,18 @@
     if (["nebula", "ocean", "sunset"].includes(saved.theme)) settings.theme = saved.theme;
     if (["chill", "normal", "chaos"].includes(saved.difficulty)) settings.difficulty = saved.difficulty;
     settings.motion = saved.motion !== false;
+    if (["light", "dark"].includes(saved.appearance)) settings.appearance = saved.appearance;
+    if (["#5848d8", "#159da8", "#df4f80", "#d68d17", "#3e7be8"].includes(saved.accent)) settings.accent = saved.accent;
+    const librarySaved = JSON.parse(localStorage.getItem("pocketParty.library.v1") || "{}");
+    favoriteIds = Array.isArray(librarySaved.favorites) ? librarySaved.favorites : [];
+    recentGames = Array.isArray(librarySaved.recent) ? librarySaved.recent : [];
   } catch (e) {}
 
   function applySettings() {
     document.documentElement.dataset.theme = settings.theme;
+    document.documentElement.dataset.appearance = settings.appearance;
+    document.documentElement.style.setProperty("--purple", settings.accent);
+    document.documentElement.style.setProperty("--purple-dark", settings.accent);
     document.documentElement.classList.toggle("reduced-motion", !settings.motion);
     const soundBtn = document.getElementById("sound-toggle");
     if (soundBtn) soundBtn.classList.toggle("is-muted", !settings.sound);
@@ -697,16 +709,19 @@
     const g = gameById(id);
     const durations = { tap_sprint: 10, mini_racers: 30, target_rush: 12, block_battle: 35, orb_dash: 30, star_snatch: 15, stack_tower: 8 };
     const duration = durations[id] || 0;
+    const effectivePlayers = (id === "tic_tac_toe" || id === "connect_four") ? (settings.players === 1 ? 1 : 2) : settings.players;
     game = {
       id: id, data: g, tournament: inTournament, round: tournament ? tournament.round : 1,
-      players: Array.from({ length: settings.players }, newPlayer),
+      players: Array.from({ length: effectivePlayers }, newPlayer),
       duration: duration, timeLeft: duration, phase: "playing", phaseTimer: 0,
       startedAt: performance.now(), target: Math.floor(Math.random() * 4), targetCooldown: 0.65,
       sequence: Array.from({ length: settings.players >= 3 ? 6 : 5 }, function () { return Math.floor(Math.random() * 4); }),
       showIndex: -1, memoryPlayer: 0, wave: 1, nextSoundAt: 0,
       activePuzzlePlayer: 0, selectedPiece: 0, orbTarget: { x: 50, y: 50 }, raceTraffic: [],
       raceTimeElapsed: 0, raceDifficulty: 0, roadScroll: 0, activeStackPlayer: 0,
-      stackX: 35, stackDirection: 1, stackSpeed: 235, starX: 12, starDirection: 1, starSpeed: 78, nextTrafficId: 1
+      stackX: 35, stackDirection: 1, stackSpeed: 235, starX: 12, starDirection: 1, starSpeed: 78, nextTrafficId: 1,
+      tttBoard: Array(9).fill(null), tttTurn: 0, tttOver: false, tttWinner: null,
+      connectBoard: Array(42).fill(null), connectTurn: 0, connectOver: false, connectWinner: null
     };
     game.players.forEach(function (p, i) {
       p.blockPieces = makeBlockPieces(p.board);
@@ -748,6 +763,9 @@
     if (id === "stack_tower") {
       game.duration = 8; game.timeLeft = 8; game.activeStackPlayer = 0;
       game.stackX = 35; game.stackDirection = 1; game.stackSpeed = 235;
+    }
+    if (id === "tic_tac_toe" || id === "connect_four") {
+      game.timeLeft = null; game.tttTurn = 0; game.connectTurn = 0;
     }
     if (id === "reflex_rush") {
       game.phase = "reflex_wait";
