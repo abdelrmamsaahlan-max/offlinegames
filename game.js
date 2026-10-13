@@ -530,6 +530,8 @@
     const owner = joystickPointerOwners.get(pointerId);
     if (!owner) return;
     joystickPointerOwners.delete(pointerId);
+    const knob = owner.button.querySelector(".joystick-knob");
+    if (knob) knob.style.transform = "translate(-50%, -50%)";
     const p = game && game.players[owner.playerIndex];
     if (p && game.id === owner.gameId) {
       p.joystickX = 0;
@@ -542,11 +544,8 @@
       }
       if (owner.gameId === "block_battle" && !cancelled && game.activePuzzlePlayer === owner.playerIndex) {
         releaseBlockCursor();
-        return;
       }
     }
-    const knob = owner.button.querySelector(".joystick-knob");
-    if (knob) knob.style.transform = "translate(-50%, -50%)";
   }
   function startTournament() {
     tournament = { active: true, round: 1, rounds: settings.rounds, scores: [0,0,0,0], recent: [] };
