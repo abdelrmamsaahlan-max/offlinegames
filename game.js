@@ -830,7 +830,7 @@
     renderGame();
     stopTick();
     lastTick = performance.now();
-    tickTimer = window.setInterval(tick, 80);
+    tickTimer = window.setInterval(tick, 33);
     if (id === "reflex_rush" || id === "dodge_arena" || id === "mini_racers") sfx("select");
   }
 
@@ -1199,6 +1199,24 @@
   function updateRaceTrack() {
     if (!game || game.id !== "mini_racers") return;
     const roadLeft = 120, roadWidth = 560, laneWidth = roadWidth / settings.players;
+    const trafficLayer = document.getElementById("traffic-layer");
+    if (trafficLayer) {
+      const liveTrafficIds = new Set();
+      (game.raceTraffic || []).forEach(function (car) {
+        if (car.y < -90 || car.y > 420) return;
+        const id = "traffic-car-" + car.id;
+        liveTrafficIds.add(id);
+        if (!document.getElementById(id)) {
+          const fileByColor = { red: "car_red_2.png", blue: "car_blue_2.png", green: "car_green_2.png", black: "car_black_2.png" };
+          const file = fileByColor[car.color] || fileByColor.blue;
+          const cx = roadLeft + (car.lane + 0.5) * laneWidth + car.offset * laneWidth * 0.34;
+          trafficLayer.insertAdjacentHTML("beforeend", '<g id="' + id + '" class="traffic-car" transform="translate(' + cx + ' ' + car.y + ')"><ellipse cx="0" cy="19" rx="22" ry="7" fill="#030918" opacity=".32"/><image href="' + racingAsset(file) + '" x="-22" y="-31" width="44" height="61" preserveAspectRatio="xMidYMid meet"/><path d="M-13 -14 H13" stroke="#FFFFFF" stroke-width="2" opacity=".65"/></g>');
+        }
+      });
+      trafficLayer.querySelectorAll(".traffic-car").forEach(function (node) {
+        if (!liveTrafficIds.has(node.id)) node.remove();
+      });
+    }
     game.players.forEach(function (p, i) {
       const center = roadLeft + (i + 0.5) * laneWidth;
       const car = document.getElementById("race-car-" + i);
@@ -1524,7 +1542,7 @@
         '<path d="M120 0V380 M680 0V380" stroke="#FFE27A" stroke-width="5"/>' + laneLines +
         '<g id="road-dash-marks">' + roadside + '</g>' +
         '<path d="M100 0V380 M700 0V380" stroke="#D0D8E9" stroke-width="3" stroke-dasharray="10 10" opacity=".24"/>' +
-        traffic + playerCars + '</svg><div class="race-bottom-tip">The road gets busier every 5 seconds. Change lanes early, not at the last second.</div></div>';
+        '<g id="traffic-layer">' + traffic + '</g>' + playerCars + '</svg><div class="race-bottom-tip">The road gets busier every 5 seconds. Change lanes early, not at the last second.</div></div>';
     } else if (id === "stack_tower") {
       const player = game.players[game.activeStackPlayer];
       const layerMarkup = player.stackLayers.map(function (layer, index) {
@@ -1864,7 +1882,7 @@
       if ((key === "arrowup" || key === "w") && i === 0) p.joystickY = -1;
     });
     if (["arrowleft","arrowright","arrowup","a","d","w"].includes(key)) { updateRaceTrack(); event.preventDefault(); }
-    if ((key === " " || key === "shift") && iAmRacing()) playerAction(0);
+    if ((key === " " || key === "shift") && !event.repeat) playerAction(0);
   });
   document.addEventListener("keyup", function (event) {
     if (!game || currentScreen !== "game" || game.id !== "mini_racers") return;
