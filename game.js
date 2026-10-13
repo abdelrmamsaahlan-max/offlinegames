@@ -707,6 +707,7 @@
       activePuzzlePlayer: 0, selectedPiece: 0, orbTarget: { x: 50, y: 50 }, raceTraffic: [],
       raceTimeElapsed: 0, raceDifficulty: 0, roadScroll: 0, activeStackPlayer: 0,
       stackX: 35, stackDirection: 1, stackSpeed: 235, starX: 12, starDirection: 1, starSpeed: 78
+      nextTrafficId: 1
     };
     game.players.forEach(function (p, i) {
       p.blockPieces = makeBlockPieces(p.board);
@@ -785,50 +786,78 @@
     lastTick = now;
     let needsRender = false;
 
-    if (game.id === "tap_sprint" || game.id === "mini_racers" || game.id === "target_rush") {
+    if (game.id === "tap_sprint" || game.id === "mini_racers" || game.id === "target_rush" || game.id === "star_snatch") {
       game.timeLeft = Math.max(0, game.timeLeft - dt);
       const timer = document.getElementById("timer-value");
       if (timer) timer.textContent = fmtTime(game.timeLeft);
       if (game.id === "mini_racers") {
-        let crossedFinish = false;
+        game.raceTimeElapsed += dt;
+        game.raceDifficulty = Math.floor(game.raceTimeElapsed / 5);
+        game.roadScroll = (game.roadScroll + dt * (98 + game.raceDifficulty * 20)) % 72;
+        const baseSpawn = settings.difficulty === "chill" ? 1.48 : (settings.difficulty === "chaos" ? 0.98 : 1.25);
+        const trafficBaseSpeed = settings.difficulty === "chill" ? 118 : (settings.difficulty === "chaos" ? 158 : 137);
+        const collisionWindow = settings.difficulty === "chill" ? 0.17 : (settings.difficulty === "chaos" ? 0.29 : 0.23);
         game.players.forEach(function (p, i) {
-          const previousProgress = p.progress;
           p.throttle = !!p.throttleButtonHeld || p.joystickY < -0.15;
-          p.raceSpeed = p.throttle ? Math.min(92, p.raceSpeed + 126 * dt) : Math.max(0, p.raceSpeed - 118 * dt);
-          p.progress = Math.min(615, p.progress + p.raceSpeed * dt);
-          (game.raceObstacles[i] || []).forEach(function (obstacle) {
-            if (obstacle.passed || previousProgress >= obstacle.progress || p.progress < obstacle.progress) return;
-            obstacle.passed = true;
-            if (Math.abs(p.raceSteer - obstacle.offset) < 0.46) {
-              p.raceSpeed = Math.max(12, p.raceSpeed - 30);
+          p.raceSpeed = p.throttle ? Math.min(112, p.raceSpeed + 62 * dt) : Math.max(34, p.raceSpeed - 27 * dt);
+          p.progress += p.raceSpeed * dt;
+          p.trafficSpawnCooldown -= dt;
+          if (p.trafficSpawnCooldown <= 0) {
+            const offsets = [-0.82, 0, 0.82];
+            const colorsForTraffic = ["red", "blue", "green", "black"];
+            game.raceTraffic.push({
+              id: game.nextTrafficId++,
+              lane: i,
+              y: -76,
+              offset: offsets[Math.floor(Math.random() * offsets.length)],
+              speed: trafficBaseSpeed + game.raceDifficulty * 19 + Math.random() * 22,
+              color: colorsForTraffic[Math.floor(Math.random() * colorsForTraffic.length)],
+              resolved: false,
+              passed: false
+            });
+            p.trafficSpawnCooldown = Math.max(0.43, baseSpawn - game.raceDifficulty * 0.14) + Math.random() * 0.3;
+          }
+        });
+        game.raceTraffic.forEach(function (car) {
+          const previousY = car.y;
+          car.y += car.speed * dt;
+          if (!car.resolved && previousY < 286 && car.y >= 242) {
+            const p = game.players[car.lane];
+            car.resolved = true;
+            if (Math.abs(p.raceSteer - car.offset) < collisionWindow) {
               p.misses++;
-              p.raceEvent = "CONE HIT · SPEED LOST";
-              p.raceEventUntil = now + 720;
+              p.raceSpeed = Math.max(30, p.raceSpeed - 30);
+              p.raceCrashUntil = now + 620;
+              p.raceEvent = "CRASH! CHANGE LANES";
+              p.raceEventUntil = now + 780;
               p.status = p.raceEvent;
               sfx("bump");
             } else {
               p.cleanPasses++;
-              p.raceSpeed = Math.min(96, p.raceSpeed + 9);
-              p.raceEvent = "CLEAN PASS · +BOOST";
-              p.raceEventUntil = now + 720;
+              p.raceSpeed = Math.min(112, p.raceSpeed + 8);
+              p.raceEvent = "CLEAN PASS · +" + (10 + game.raceDifficulty * 3);
+              p.raceEventUntil = now + 680;
               p.status = p.raceEvent;
               sfx("boost");
             }
-          });
-          if (p.progress >= 615) {
-            p.status = "FINISH!";
-            crossedFinish = true;
-          } else if (now < p.raceEventUntil) {
-            p.status = p.raceEvent;
-          } else if (p.throttle) {
-            p.status = "DRIVING · " + Math.round(p.raceSpeed) + " SPEED";
-          } else if (p.raceSpeed > 2) {
-            p.status = "COASTING · " + Math.round(p.raceSpeed) + " SPEED";
           }
+          if (car.y > 410) car.passed = true;
         });
+        game.raceTraffic = game.raceTraffic.filter(function (car) { return !car.passed; });
         updateRaceTrack();
         refreshPlayerPanels();
-        if (crossedFinish) { finishRound(); return; }
+      }
+      if (game.id === "star_snatch") {
+        const elapsed = game.duration - game.timeLeft;
+        const baseSpeed = settings.difficulty === "chill" ? 60 : (settings.difficulty === "chaos" ? 105 : 78);
+        game.starSpeed = baseSpeed + Math.floor(elapsed / 5) * 18;
+        game.starX += game.starDirection * game.starSpeed * dt;
+        if (game.starX >= 88) { game.starX = 88; game.starDirection = -1; }
+        if (game.starX <= 12) { game.starX = 12; game.starDirection = 1; }
+        const cursor = document.getElementById("star-cursor");
+        if (cursor) cursor.style.left = game.starX + "%";
+        const level = document.getElementById("star-level");
+        if (level) level.textContent = "SPEED " + (Math.floor(elapsed / 5) + 1);
       }
       if (game.id === "target_rush") {
         game.targetCooldown -= dt;
@@ -839,11 +868,17 @@
         }
       }
       if (game.timeLeft <= 0) finishRound();
-    } else if (game.id === "block_battle") {
+    } else if (game.id === "stack_tower") {
       game.timeLeft = Math.max(0, game.timeLeft - dt);
       const timer = document.getElementById("timer-value");
       if (timer) timer.textContent = fmtTime(game.timeLeft);
-      if (game.timeLeft <= 0) advanceBlockTurn();
+      const player = game.players[game.activeStackPlayer];
+      const maxX = Math.max(32, 728 - (player ? player.stackWidth : 220));
+      game.stackX += game.stackDirection * game.stackSpeed * dt;
+      if (game.stackX > maxX) { game.stackX = maxX; game.stackDirection = -1; }
+      if (game.stackX < 32) { game.stackX = 32; game.stackDirection = 1; }
+      updateStackTower();
+      if (game.timeLeft <= 0) advanceStackTurn();
     } else if (game.id === "orb_dash") {
       game.timeLeft = Math.max(0, game.timeLeft - dt);
       const timer = document.getElementById("timer-value");
