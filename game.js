@@ -18,7 +18,7 @@
     { id: "orb_dash", title: "Orb Dash", category: "MOVEMENT", desc: "Steer your orb, grab gems, and dodge rivals.", color: "#7d65f2", soft: "#eeebff", length: "30 SEC" },
     { id: "star_snatch", title: "Star Snatch", category: "TIMING", desc: "Tap when the moving star hits the sweet spot.", color: "#f6bd43", soft: "#fff5d7", length: "15 SEC" },
     { id: "stack_tower", title: "Stack Tower", category: "SKILL", desc: "Drop moving blocks, keep your tower balanced, and climb.", color: "#5a9cff", soft: "#eaf3ff", length: "8 SEC PER PLAYER" },
-    { id: "tic_tac_toe", title: "Tic-Tac-Toe", category: "CLASSIC", desc: "Outsmart a friend or challenge a perfect-play bot.", color: "#47c995", soft: "#e1f8ed", length: "FIRST TO 3" },
+    { id: "tic_tac_toe", title: "Tic-Tac-Toe", category: "CLASSIC", desc: "Outsmart a friend or challenge a perfect-play bot.", color: "#47c995", soft: "#e1f8ed", length: "TURN BASED" },
     { id: "connect_four", title: "Connect Four", category: "STRATEGY", desc: "Drop discs, block threats, and connect four in a row.", color: "#4d8dff", soft: "#e9f1ff", length: "TURN BASED" }
   ];
   // Deliberately varied, normalized polyominoes from 1–5 cells. Pieces rotate in play.
