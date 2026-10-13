@@ -145,6 +145,56 @@
     }
     return commonStart + '<rect width="320" height="150" rx="18" fill="' + gameById(id).soft + '"/>' + shapes + '</svg>';
   }
+  const KENNEY_ASSET = "https://raw.githubusercontent.com/shorepine/kenney/main/2d/";
+  const puzzleAsset = function (name) { return KENNEY_ASSET + "Puzzle%20Pack%201/" + name; };
+  const racingAsset = function (name) { return KENNEY_ASSET + "Racing%20Pack/Cars/" + name; };
+  function assetArt(id) {
+    const sprite = function (src, cls, alt) {
+      return '<img class="real-sprite ' + cls + '" src="' + src + '" alt="' + alt + '" loading="lazy" decoding="async" draggable="false">';
+    };
+    const squares = ["element_red_square_glossy.png", "element_blue_square_glossy.png", "element_yellow_square_glossy.png", "element_green_square_glossy.png"];
+    const tiles = function (cls, count) {
+      return squares.slice(0, count || 4).map(function (name, i) {
+        return sprite(puzzleAsset(name), cls + " " + cls + "-" + i, "Kenney CC0 glossy game tile");
+      }).join("");
+    };
+    let images = "";
+    if (id === "mini_racers") {
+      images = sprite(racingAsset("car_red_1.png"), "sprite-car car-a", "Kenney CC0 red racing car") +
+        sprite(racingAsset("car_blue_1.png"), "sprite-car car-b", "Kenney CC0 blue racing car") +
+        '<span class="asset-lane-lines"></span><span class="asset-badge">TRAFFIC RUN</span>';
+    } else if (id === "block_battle") {
+      images = tiles("puzzle-sprite") + '<span class="asset-badge">8 × 8 PUZZLE</span>';
+    } else if (id === "memory_grid") {
+      images = tiles("memory-sprite");
+    } else if (id === "target_rush") {
+      images = tiles("target-sprite") + '<span class="asset-badge">LOCK ON</span>';
+    } else if (id === "star_snatch") {
+      images = sprite(puzzleAsset("particleCartoonStar.png"), "sprite-star star-large", "Kenney CC0 cartoon star") +
+        sprite(puzzleAsset("particleSmallStar.png"), "sprite-star star-small", "Kenney CC0 star particle") +
+        '<span class="asset-badge">PERFECT TIMING</span>';
+    } else if (id === "stack_tower") {
+      images = '<img class="real-sprite tower-crate" src="' + KENNEY_ASSET + 'Block%20Pack/box.png" alt="Kenney CC0 crate game sprite" loading="lazy" decoding="async">' +
+        sprite(puzzleAsset("element_blue_square_glossy.png"), "tower-block", "Kenney CC0 tower block") +
+        sprite(puzzleAsset("element_red_square_glossy.png"), "tower-block tower-block-high", "Kenney CC0 tower block") +
+        '<span class="asset-badge">BUILD THE STACK</span>';
+    } else if (id === "orb_dash") {
+      images = sprite(puzzleAsset("particleCartoonStar.png"), "sprite-star star-large", "Kenney CC0 star") +
+        sprite(puzzleAsset("element_yellow_square_glossy.png"), "sprite-gem", "Kenney CC0 collectible sprite") +
+        sprite(puzzleAsset("element_blue_square_glossy.png"), "sprite-orb orb-blue", "Kenney CC0 blue tile") +
+        '<span class="asset-badge">GEM CHASE</span>';
+    } else if (id === "dodge_arena") {
+      images = sprite(puzzleAsset("particleStar.png"), "sprite-star star-large", "Kenney CC0 star particle") +
+        sprite(puzzleAsset("element_red_square_glossy.png"), "sprite-danger", "Kenney CC0 danger tile") +
+        sprite(puzzleAsset("element_blue_square_glossy.png"), "sprite-orb orb-blue", "Kenney CC0 blue tile");
+    } else if (id === "reflex_rush") {
+      images = tiles("reflex-sprite", 3) + '<span class="asset-badge">READY?</span>';
+    } else if (id === "tap_sprint") {
+      images = tiles("tap-sprite") + '<span class="asset-badge">TAP FAST</span>';
+    }
+    return '<div class="real-art real-art-' + id + '" aria-label="' + escapeText(gameById(id).title) + ' artwork">' + images + '</div>';
+  }
+
   function renderHome() {
     currentScreen = "home";
     root.innerHTML = '<div class="shell">' +
@@ -180,7 +230,7 @@
       '<section class="game-grid" aria-label="Choose a mini-game">' +
         gameList.map(function (g, i) {
           return '<button class="game-card" data-action="quick-play" data-game="' + g.id + '">' +
-            '<div class="game-art">' + art(g.id) + '</div>' +
+            '<div class="game-art">' + assetArt(g.id) + '</div>' +
             '<div class="game-card-top"><span class="game-category">' + g.category + '</span><span class="game-number">0' + (i + 1) + '</span></div>' +
             '<h3>' + g.title + '</h3><p>' + g.desc + '</p>' +
             '<div class="game-card-footer"><span class="game-meta">' + g.length + '</span><span class="play-link">PLAY GAME <span>↗</span></span></div>' +
