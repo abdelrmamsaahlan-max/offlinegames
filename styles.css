@@ -346,7 +346,7 @@ button{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease,bord
 @keyframes stick-turn{to{transform:rotate(360deg)}}
 @keyframes race-wheel-spin{to{transform:rotate(360deg)}}
 @keyframes nitro-flicker{0%{transform:scaleX(.8) scaleY(.8)}100%{transform:scaleX(1.25) scaleY(1.2)}}
-@keyframes cone-wobble{from{transform:translateY(-1px) rotate(-2deg)}to{transform:translateY(1px) rotate(2deg)}}
+@keyframes cone-wobble{from{translate:0 -1px;rotate:-2deg}to{translate:0 1px;rotate:2deg}}
 @keyframes speed-lines{from{background-position:0 0}to{background-position:160px 0}}
 @keyframes block-place-pop{0%{transform:scale(.65);filter:brightness(1.8)}75%{transform:scale(1.06)}100%{transform:scale(1);filter:brightness(1)}}
 @keyframes block-line-flash{0%{background:#fff;filter:brightness(2.8);transform:scale(.94)}55%{background:#ffe27a;filter:brightness(1.7)}100%{background:#334261;filter:brightness(1);transform:scale(1)}}
