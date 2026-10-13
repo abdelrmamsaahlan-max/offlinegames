@@ -190,7 +190,7 @@
       board: Array(64).fill(null), blockPieces: [], blockScore: 0, blockLines: 0, blockStreak: 0,
       blockCursor: { row: 3, col: 3 }, lastPlaced: [], lastCleared: [],
       orbX: 50, orbY: 50, joystickX: 0, joystickY: 0, raceSteer: 0, cleanPasses: 0,
-      throttleButtonHeld: false, boostFlash: 0
+      throttleButtonHeld: false, boostFlash: 0, raceEvent: "", raceEventUntil: 0
     };
   }
   function spawnOrbTarget() {
@@ -671,21 +671,27 @@
             if (Math.abs(p.raceSteer - obstacle.offset) < 0.46) {
               p.raceSpeed = Math.max(12, p.raceSpeed - 30);
               p.misses++;
-              p.status = "CONE HIT · SPEED LOST";
+              p.raceEvent = "CONE HIT · SPEED LOST";
+              p.raceEventUntil = now + 720;
+              p.status = p.raceEvent;
               sfx("bump");
             } else {
               p.cleanPasses++;
               p.raceSpeed = Math.min(96, p.raceSpeed + 9);
-              p.status = "CLEAN PASS · +BOOST";
+              p.raceEvent = "CLEAN PASS · +BOOST";
+              p.raceEventUntil = now + 720;
+              p.status = p.raceEvent;
               sfx("boost");
             }
           });
           if (p.progress >= 615) {
             p.status = "FINISH!";
             crossedFinish = true;
-          } else if (p.throttle && !String(p.status).includes("CONE HIT")) {
+          } else if (now < p.raceEventUntil) {
+            p.status = p.raceEvent;
+          } else if (p.throttle) {
             p.status = "DRIVING · " + Math.round(p.raceSpeed) + " SPEED";
-          } else if (p.raceSpeed > 2 && !String(p.status).includes("CONE HIT")) {
+          } else if (p.raceSpeed > 2) {
             p.status = "COASTING · " + Math.round(p.raceSpeed) + " SPEED";
           }
         });
