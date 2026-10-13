@@ -992,13 +992,66 @@
         p.status = p.taps + " TAPS · " + (5 - p.taps % 5) + " TO COMBO";
         beep(380 + Math.min(400, p.taps * 3), 0.025, "triangle");
       }
-    } else if (game.id === "mini_racers" && game.timeLeft > 0 && p.progress < 615) {
+    } else if (game.id === "mini_racers" && game.timeLeft > 0) {
       p.boosts++;
-      p.raceSpeed = Math.min(96, p.raceSpeed + 24);
-      p.boostFlash = performance.now() + 380;
+      p.raceSpeed = Math.min(112, p.raceSpeed + 24);
+      p.boostFlash = performance.now() + 460;
       p.status = "NITRO BOOST! " + p.boosts;
       sfx("boost", pIndex * 22);
       updateRaceTrack();
+    } else if (game.id === "star_snatch" && game.timeLeft > 0) {
+      const now = performance.now();
+      if (now < p.starCooldownUntil) return;
+      const missDistance = Math.abs(game.starX - 50);
+      const tolerance = settings.difficulty === "chill" ? 10 : (settings.difficulty === "chaos" ? 5.5 : 7.5);
+      if (missDistance <= tolerance) {
+        p.hits++;
+        p.status = "NICE SNATCH! +" + (10 + Math.max(0, 7 - Math.round(missDistance)));
+        sfx("gem", pIndex * 18);
+      } else {
+        p.misses++;
+        p.status = "MISSED BY " + Math.round(missDistance) + "%";
+        sfx("error");
+      }
+      p.starCooldownUntil = now + 330;
+      refreshPlayerPanels();
+      return;
+    } else if (game.id === "stack_tower" && game.activeStackPlayer === pIndex && game.timeLeft > 0 && p.stackAlive) {
+      const top = p.stackLayers[p.stackLayers.length - 1] || { x: 270, width: 220 };
+      const movingWidth = p.stackWidth;
+      const left = Math.max(game.stackX, top.x);
+      const right = Math.min(game.stackX + movingWidth, top.x + top.width);
+      const overlap = right - left;
+      if (overlap < 22) {
+        p.stackAlive = false;
+        p.stackScore = p.stackHeight * 10;
+        p.status = "TOWER COLLAPSED · " + p.stackHeight + " LAYERS";
+        sfx("bump");
+        refreshPlayerPanels();
+        advanceStackTurn();
+        return;
+      }
+      const perfect = Math.abs((game.stackX + movingWidth / 2) - (top.x + top.width / 2)) <= 6;
+      p.stackLayers.push({ x: left, width: overlap, colorIndex: pIndex });
+      p.stackHeight++;
+      p.stackDrops++;
+      p.stackWidth = overlap;
+      p.stackScore += 10 + (perfect ? 8 : 0);
+      p.status = perfect ? "PERFECT STACK! +18" : "STACK " + p.stackHeight + " · +" + 10;
+      game.stackSpeed += 16;
+      sfx(perfect ? "combo" : "place", pIndex * 16);
+      if (p.stackHeight >= 8) {
+        p.status = "TOWER COMPLETE!";
+        p.stackScore += 35;
+        sfx("win");
+        renderGame();
+        advanceStackTurn();
+        return;
+      }
+      game.stackDirection *= -1;
+      game.stackX = game.stackDirection > 0 ? 32 : Math.max(32, 728 - p.stackWidth);
+      renderGame();
+      return;
     } else if (game.id === "reflex_rush") {
       if (p.responded) return;
       p.responded = true;
