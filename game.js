@@ -467,25 +467,79 @@
     }
   }
   function setJoystickValue(playerIndex, button, event) {
-    if (!game || game.id !== "orb_dash" || !game.players[playerIndex]) return;
+    if (!game || !game.players[playerIndex]) return null;
     const rect = button.getBoundingClientRect();
     const radius = Math.max(20, Math.min(rect.width, rect.height) * 0.36);
     let dx = event.clientX - (rect.left + rect.width / 2);
     let dy = event.clientY - (rect.top + rect.height / 2);
     const distance = Math.hypot(dx, dy);
     if (distance > radius) { dx *= radius / distance; dy *= radius / distance; }
-    game.players[playerIndex].joystickX = dx / radius;
-    game.players[playerIndex].joystickY = dy / radius;
+    const value = { x: dx / radius, y: dy / radius, magnitude: Math.min(1, distance / radius) };
+    game.players[playerIndex].joystickX = value.x;
+    game.players[playerIndex].joystickY = value.y;
     const knob = button.querySelector(".joystick-knob");
     if (knob) knob.style.transform = "translate(calc(-50% + " + dx + "px), calc(-50% + " + dy + "px))";
+    return value;
   }
-  function releaseJoystick(pointerId) {
+  function joystickColor(value) {
+    if (Math.abs(value.x) > Math.abs(value.y)) return value.x < 0 ? 0 : 2;
+    return value.y < 0 ? 1 : 3;
+  }
+  function applyJoystickInput(owner, value) {
+    if (!game || currentScreen !== "game" || game.id !== owner.gameId || !game.players[owner.playerIndex]) return;
+    const p = game.players[owner.playerIndex];
+    if (game.id === "mini_racers") {
+      p.raceSteer = value.magnitude > 0.12 ? value.x : 0;
+      p.throttle = !!p.throttleButtonHeld || value.y < -0.15;
+      updateRaceTrack();
+      refreshPlayerPanels();
+    } else if (game.id === "orb_dash") {
+      // The arena tick reads this vector so motion stays smooth between touch events.
+    } else if (game.id === "memory_grid" || game.id === "target_rush") {
+      if (!owner.acted && value.magnitude > 0.30) {
+        owner.acted = true;
+        colorAction(owner.playerIndex, joystickColor(value));
+      }
+    } else if (game.id === "block_battle") {
+      if (value.magnitude > 0.27) {
+        const direction = joystickColor(value);
+        const now = performance.now();
+        if (owner.lastDir !== direction || now - owner.lastStepAt > 170) {
+          const cursor = p.blockCursor || { row: 3, col: 3 };
+          if (direction === 0) cursor.col = Math.max(0, cursor.col - 1);
+          else if (direction === 2) cursor.col = Math.min(7, cursor.col + 1);
+          else if (direction === 1) cursor.row = Math.max(0, cursor.row - 1);
+          else cursor.row = Math.min(7, cursor.row + 1);
+          p.blockCursor = cursor;
+          owner.lastDir = direction;
+          owner.lastStepAt = now;
+          owner.moved = true;
+          const cell = root.querySelector('.block-cell[data-row="' + cursor.row + '"][data-col="' + cursor.col + '"]');
+          updateBlockGhostAtCell(cell);
+        }
+      } else {
+        owner.lastDir = null;
+      }
+    }
+  }
+  function releaseJoystick(pointerId, cancelled) {
     const owner = joystickPointerOwners.get(pointerId);
     if (!owner) return;
     joystickPointerOwners.delete(pointerId);
-    if (game && game.id === "orb_dash" && game.players[owner.playerIndex]) {
-      game.players[owner.playerIndex].joystickX = 0;
-      game.players[owner.playerIndex].joystickY = 0;
+    const p = game && game.players[owner.playerIndex];
+    if (p && game.id === owner.gameId) {
+      p.joystickX = 0;
+      p.joystickY = 0;
+      if (owner.gameId === "mini_racers") {
+        const raceHeld = Array.from(racePointerOwners.values()).includes(owner.playerIndex);
+        p.raceSteer = 0;
+        p.throttle = !!p.throttleButtonHeld || raceHeld;
+        updateRaceTrack();
+      }
+      if (owner.gameId === "block_battle" && !cancelled && game.activePuzzlePlayer === owner.playerIndex) {
+        releaseBlockCursor();
+        return;
+      }
     }
     const knob = owner.button.querySelector(".joystick-knob");
     if (knob) knob.style.transform = "translate(-50%, -50%)";
@@ -1101,18 +1155,25 @@
         game.selectedPiece = pieceIndex;
         activeBlockDrag = { pointerId: event.pointerId, pieceIndex: pieceIndex };
         puzzlePiece.classList.add("dragging");
+        sfx("select");
       }
       return;
     }
     const stick = event.target.closest('[data-action="joystick"]');
-    if (stick && root.contains(stick) && currentScreen === "game" && game && game.id === "orb_dash") {
+    if (stick && root.contains(stick) && currentScreen === "game" && game) {
       const playerIndex = Number(stick.dataset.player);
-      if (game.players[playerIndex]) {
-        joystickPointerOwners.set(event.pointerId, { playerIndex: playerIndex, button: stick });
-        setJoystickValue(playerIndex, stick, event);
-        event.preventDefault();
-        if (stick.setPointerCapture) { try { stick.setPointerCapture(event.pointerId); } catch (e) {} }
+      if (!game.players[playerIndex] || stick.disabled) return;
+      const owner = { playerIndex: playerIndex, button: stick, gameId: game.id, acted: false, moved: false, lastDir: null, lastStepAt: 0 };
+      joystickPointerOwners.set(event.pointerId, owner);
+      const value = setJoystickValue(playerIndex, stick, event);
+      if (value) applyJoystickInput(owner, value);
+      if (game.id === "tap_sprint" || game.id === "reflex_rush" || game.id === "dodge_arena") {
+        owner.acted = true;
+        playerAction(playerIndex);
       }
+      sfx("stick");
+      event.preventDefault();
+      if (stick.setPointerCapture) { try { stick.setPointerCapture(event.pointerId); } catch (e) {} }
       return;
     }
     const button = event.target.closest('[data-action="player"]');
@@ -1121,20 +1182,34 @@
     const player = game.players[playerIndex];
     if (!player) return;
     racePointerOwners.set(event.pointerId, playerIndex);
+    player.throttleButtonHeld = true;
     player.throttle = true;
     button.classList.add("racing-active");
   });
   document.addEventListener("pointermove", function (event) {
     const owner = joystickPointerOwners.get(event.pointerId);
-    if (!owner) return;
-    setJoystickValue(owner.playerIndex, owner.button, event);
-    event.preventDefault();
+    if (owner) {
+      const value = setJoystickValue(owner.playerIndex, owner.button, event);
+      if (value) applyJoystickInput(owner, value);
+      event.preventDefault();
+      return;
+    }
+    if (activeBlockDrag && activeBlockDrag.pointerId === event.pointerId) {
+      const under = document.elementFromPoint(event.clientX, event.clientY);
+      const cell = under && typeof under.closest === "function" ? under.closest('[data-action="block-place"]') : null;
+      if (cell) updateBlockGhostAtCell(cell);
+      event.preventDefault();
+    } else if (currentScreen === "game" && game && game.id === "block_battle" && event.pointerType === "mouse") {
+      const under = document.elementFromPoint(event.clientX, event.clientY);
+      const cell = under && typeof under.closest === "function" ? under.closest('[data-action="block-place"]') : null;
+      if (cell) updateBlockGhostAtCell(cell);
+    }
   }, { passive: false });
   document.addEventListener("pointerup", function (event) {
-    releaseJoystick(event.pointerId);
+    releaseJoystick(event.pointerId, false);
     if (activeBlockDrag && activeBlockDrag.pointerId === event.pointerId) {
-      const target = event.target;
-      const cell = target && typeof target.closest === "function" ? target.closest('[data-action="block-place"]') : null;
+      const under = document.elementFromPoint(event.clientX, event.clientY);
+      const cell = under && typeof under.closest === "function" ? under.closest('[data-action="block-place"]') : null;
       if (cell && currentScreen === "game" && game && game.id === "block_battle") {
         game.selectedPiece = activeBlockDrag.pieceIndex;
         placeBlockPiece(Number(cell.dataset.row), Number(cell.dataset.col));
@@ -1143,7 +1218,7 @@
     }
   });
   document.addEventListener("pointercancel", function (event) {
-    releaseJoystick(event.pointerId);
+    releaseJoystick(event.pointerId, true);
     if (activeBlockDrag && activeBlockDrag.pointerId === event.pointerId) activeBlockDrag = null;
   });
   function releaseRacePointer(event) {
