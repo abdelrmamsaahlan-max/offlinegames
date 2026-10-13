@@ -1317,6 +1317,15 @@
         '<g id="road-dash-marks">' + roadside + '</g>' +
         '<path d="M100 0V380 M700 0V380" stroke="#D0D8E9" stroke-width="3" stroke-dasharray="10 10" opacity=".24"/>' +
         traffic + playerCars + '</svg><div class="race-bottom-tip">The road gets busier every 5 seconds. Change lanes early, not at the last second.</div></div>';
+    } else if (id === "stack_tower") {
+      const player = game.players[game.activeStackPlayer];
+      const layerMarkup = player.stackLayers.map(function (layer, index) {
+        const y = 242 - index * 22;
+        const tileColor = colors[(game.activeStackPlayer + index) % colors.length];
+        return '<g class="stack-layer"><rect x="' + layer.x + '" y="' + y + '" width="' + layer.width + '" height="19" rx="4" fill="' + tileColor + '" stroke="#FFFFFF" stroke-width="1.5"/><path d="M' + (layer.x + 6) + ' ' + (y + 4) + ' H' + (layer.x + layer.width - 6) + '" stroke="#FFFFFF" stroke-width="2" opacity=".45"/></g>';
+      }).join("");
+      const movingY = 242 - player.stackHeight * 22;
+      html = '<div class="stack-scene"><div class="stack-hud"><span class="stack-kicker">STACK TOWER · PLAYER ' + (game.activeStackPlayer + 1) + '</span><span id="stack-height-live">LAYER ' + player.stackHeight + ' / 8</span></div><strong>Line up the block. Drop on the beat.</strong><p>Only the overlap stays. Perfect alignment earns bonus points.</p><svg class="stack-track" viewBox="0 0 760 280" role="img" aria-label="Stack Tower moving block timing game"><defs><linearGradient id="stackSky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#17234B"/><stop offset="1" stop-color="#463990"/></linearGradient><linearGradient id="stackFloor" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#495B83"/><stop offset="1" stop-color="#253455"/></linearGradient></defs><rect width="760" height="280" rx="20" fill="url(#stackSky)"/><path d="M0 55H760M0 100H760M0 145H760M0 190H760M0 235H760" stroke="#FFFFFF" stroke-width="1" opacity=".07"/><path d="M80 0V280M160 0V280M240 0V280M320 0V280M400 0V280M480 0V280M560 0V280M640 0V280M720 0V280" stroke="#FFFFFF" stroke-width="1" opacity=".05"/>' + layerMarkup + '<rect id="stack-moving-block" x="' + game.stackX + '" y="' + movingY + '" width="' + player.stackWidth + '" height="19" rx="4" fill="' + colors[game.activeStackPlayer] + '" stroke="#FFFFFF" stroke-width="2"/><path d="M30 261H730" stroke="#A5B8E8" stroke-width="3" stroke-linecap="round" opacity=".48"/><circle cx="30" cy="261" r="5" fill="#FFE27A"/><circle cx="730" cy="261" r="5" fill="#FFE27A"/></svg><div class="stack-tip">Each player gets up to eight drops. A tiny overlap will collapse the tower.</div></div>';
     } else if (id === "block_battle") {
       const player = game.players[game.activePuzzlePlayer];
       const cursor = player.blockCursor || { row: 3, col: 3 };
@@ -1337,7 +1346,10 @@
         if (cursor.row === row && cursor.col === col) classes.push("cursor-anchor");
         if (placed.has(index) && value !== null) classes.push("place-pop");
         if (cleared.has(index) && value === null) classes.push("line-flash");
-        const ghostColor = value !== null ? colors[value] : (ghostCells.has(index) && activePiece ? colors[activePiece.colorIndex] : "");
+        const tileTextures = ["element_red_square_glossy.png","element_blue_square_glossy.png","element_yellow_square_glossy.png","element_green_square_glossy.png"];
+        const tileIndex = value !== null ? value : (ghostCells.has(index) && activePiece ? activePiece.colorIndex : -1);
+        const ghostColor = tileIndex >= 0 ? colors[tileIndex] : "";
+        const bgStyle = tileIndex >= 0 ? ' style="--block-color:' + ghostColor + ';--block-sprite:url(' + puzzleAsset(tileTextures[tileIndex]) + ')"' : "";
         const bgStyle = ghostColor ? ' style="--block-color:' + ghostColor + '"' : "";
         return '<button class="' + classes.join(" ") + '"' + bgStyle + ' data-action="block-place" data-row="' + row + '" data-col="' + col + '" aria-label="Row ' + (row + 1) + ', column ' + (col + 1) + '"></button>';
       }).join("");
@@ -1355,12 +1367,14 @@
     } else if (id === "orb_dash") {
       const orbs = game.players.map(function (p, i) { return '<span class="orb-player" id="orb-player-' + i + '" style="--orb-color:' + colors[i] + ';left:' + p.orbX + '%;top:' + p.orbY + '%"><span>' + (i + 1) + '</span></span>'; }).join("");
       html = '<div class="orb-dash-layout"><div class="orb-dash-heading"><div><span class="orb-kicker">ORBIT ARENA</span><strong>Grab the gems!</strong><small>Move with your joystick. Every gem is worth 10 points.</small></div><span class="orb-leader" id="orb-leader">P1 LEADS · 0 PTS</span></div><div class="orb-arena-field" id="orb-arena-field"><span class="orb-gem" id="orb-gem" style="left:' + game.orbTarget.x + '%;top:' + game.orbTarget.y + '%">✦</span>' + orbs + '</div><div class="orb-arena-note">Keep moving, collect the gold gem, and beat your friends to the next one.</div></div>';
+    } else if (id === "star_snatch") {
+      html = '<div class="star-snatch-scene"><div class="star-snatch-hud"><span class="star-snatch-kicker">STAR SNATCH</span><span id="star-level">SPEED 1</span></div><div class="arena-big star-score-live" id="star-score-live">CATCH THE STAR ✦</div><h2>Tap when the star crosses the gold zone</h2><p>Early and late taps cost points. Timing gets quicker every five seconds.</p><div class="star-meter"><span class="star-target-zone"></span><span class="star-center-line"></span><span class="star-cursor" id="star-cursor" style="left:' + game.starX + '%"><img src="' + puzzleAsset("particleCartoonStar.png") + '" alt="" draggable="false"></span></div><div class="star-meter-legend"><span>TOO EARLY</span><span>PERFECT ZONE</span><span>TOO LATE</span></div></div>';
     } else if (id === "dodge_arena") {
       html = '<div class="arena-big" style="color:' + (game.phase === "dodge_live" ? "#168e64" : "#dba23a") + '">' + (game.phase === "dodge_live" ? "DODGE!" : "READY?") + '</div><h2>' + (game.phase === "dodge_live" ? "TAP BEFORE THE WAVE HITS" : "WAIT FOR THE SIGNAL") + '</h2><p>WAVE ' + game.wave + ' / 8 · One chance per wave.</p><div class="arena-symbols">' + (game.phase === "dodge_live" ? "⚡ 🌀 ⚡" : "◌ ◌ ◌") + '</div>';
     } else {
       html = '<div class="arena-big">MATCH THIS!</div><h2>COLOR TARGET</h2><p>Tap the same color in your panel.</p><div class="arena-grid"><span class="arena-tile" id="target-display" style="width:65px;height:65px;font-weight:1000;display:grid;place-items:center;background:' + colors[game.target] + ';color:' + (game.target === 2 ? ink : "#fff") + '">' + ["R","B","Y","G"][game.target] + '</span></div><p style="margin-top:10px;font-weight:1000;color:' + game.data.color + '" id="target-label">' + ["RED","BLUE","YELLOW","GREEN"][game.target] + '</p>';
     }
-    const arenaClass = ({ tap_sprint: " tap-arena", reflex_rush: " reflex-arena", memory_grid: " memory-arena", mini_racers: " racing-arena", dodge_arena: " dodge-arena", target_rush: " target-arena", block_battle: " block-arena", orb_dash: " orb-arena" })[id] || "";
+    const arenaClass = ({ tap_sprint: " tap-arena", reflex_rush: " reflex-arena", memory_grid: " memory-arena", mini_racers: " racing-arena", dodge_arena: " dodge-arena", target_rush: " target-arena", block_battle: " block-arena", orb_dash: " orb-arena", star_snatch: " star-arena", stack_tower: " stack-arena" })[id] || "";
     return '<div class="arena' + arenaClass + '" style="--arena-bg:' + bg + ';--arena-dot:' + game.data.color + '"><div class="arena-pattern"></div><div class="arena-center">' + html + '</div></div>';
   }
   function renderGame() {
@@ -1390,7 +1404,7 @@
             (game.id === "stack_tower" ? '<button class="action-button stack-drop-button" data-action="player" data-player="' + i + '" ' + (activeStack ? "" : "disabled") + '>' + (activeStack ? "DROP BLOCK" : "WAIT TURN") + '</button>' :
               '<button class="action-button ' + (i === 2 ? "soft-text" : "") + '" data-action="player" data-player="' + i + '">' + (game.id === "tap_sprint" ? "TAP FAST!" : game.id === "dodge_arena" ? "DODGE NOW!" : game.id === "star_snatch" ? "SNATCH STAR!" : "TAP ON GO!") + '</button>'))))) +
         '</section>';
-      }).join("") + '</div><div class="game-tip">' + (game.id === "memory_grid" ? "Pass the phone: each player gets a turn to repeat the sequence." : (game.id === "mini_racers" ? "Push UP to accelerate, steer left or right around cones, and tap NITRO BOOST for a burst. First across the finish line wins!" : (game.id === "block_battle" ? "Take turns with your own puzzle board. Clear complete rows and columns to earn bonus points." : (game.id === "orb_dash" ? "Drag your player joystick to move in any direction. Collect ✦ gems for 10 points each." : "Everybody plays on one screen. Tap only your own player panel.")))) + '</div></div></div>';
+      }).join("") + '</div><div class="game-tip">' + (game.id === "memory_grid" ? "Pass the phone: each player gets a turn to repeat the sequence." : (game.id === "mini_racers" ? "Push UP to accelerate, steer left or right around cones, and tap NITRO BOOST for a burst. First across the finish line wins!" : (game.id === "block_battle" ? "Take turns with your own puzzle board. Clear complete rows and columns to earn bonus points." : (game.id === "orb_dash" ? "Drag your player joystick to move in any direction. Collect ✦ gems for 10 points each." : (game.id === "star_snatch" ? "Tap SNATCH STAR when the moving star enters the gold target zone." : (game.id === "stack_tower" ? "Take turns dropping moving blocks. Precise overlaps build a taller tower." : "Everybody plays on one screen. Tap only your own player panel.")))))) + '</div></div></div>';
     if (game.id === "reflex_rush" && game.phase === "reflex_go") {
       game.startedGoAt = performance.now();
     }
