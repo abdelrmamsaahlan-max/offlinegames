@@ -1137,7 +1137,7 @@
     } else {
       html = '<div class="arena-big">MATCH THIS!</div><h2>COLOR TARGET</h2><p>Tap the same color in your panel.</p><div class="arena-grid"><span class="arena-tile" id="target-display" style="width:65px;height:65px;font-weight:1000;display:grid;place-items:center;background:' + colors[game.target] + ';color:' + (game.target === 2 ? ink : "#fff") + '">' + ["R","B","Y","G"][game.target] + '</span></div><p style="margin-top:10px;font-weight:1000;color:' + game.data.color + '" id="target-label">' + ["RED","BLUE","YELLOW","GREEN"][game.target] + '</p>';
     }
-    const arenaClass = id === "mini_racers" ? " racing-arena" : (id === "block_battle" ? " block-arena" : (id === "orb_dash" ? " orb-arena" : ""));
+    const arenaClass = ({ tap_sprint: " tap-arena", reflex_rush: " reflex-arena", memory_grid: " memory-arena", mini_racers: " racing-arena", dodge_arena: " dodge-arena", target_rush: " target-arena", block_battle: " block-arena", orb_dash: " orb-arena" })[id] || "";
     return '<div class="arena' + arenaClass + '" style="--arena-bg:' + bg + ';--arena-dot:' + game.data.color + '"><div class="arena-pattern"></div><div class="arena-center">' + html + '</div></div>';
   }
   function renderGame() {
