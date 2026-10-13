@@ -65,6 +65,8 @@
     document.documentElement.style.setProperty("--purple", settings.accent);
     document.documentElement.style.setProperty("--purple-dark", settings.accent);
     document.documentElement.classList.toggle("reduced-motion", !settings.motion);
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) metaThemeColor.setAttribute("content", settings.appearance === "dark" ? "#0a1020" : (settings.theme === "ocean" ? "#eafcff" : (settings.theme === "sunset" ? "#fff3e9" : "#f4f6fc")));
     const soundBtn = document.getElementById("sound-toggle");
     if (soundBtn) soundBtn.classList.toggle("is-muted", !settings.sound);
   }
@@ -1537,6 +1539,7 @@
         const carName = ["car_red_1.png", "car_blue_1.png", "car_green_1.png", "car_black_1.png"][i];
         const crashed = performance.now() < p.raceCrashUntil;
         return '<g id="race-car-' + i + '" class="race-car' + (p.raceSpeed > 48 ? ' car-boost' : '') + (crashed ? ' car-crashed' : '') + '" transform="translate(' + x + ' 270)">' +
+          '<path class="race-speed-trail" d="M-16 20 L-20 49 M0 25 L0 59 M16 20 L20 49" fill="none" stroke="#8cf8ff" stroke-width="4" stroke-linecap="round"/>' +
           '<ellipse cx="0" cy="25" rx="23" ry="9" fill="#020816" opacity=".38"/>' +
           '<image href="' + racingAsset(carName) + '" x="-24" y="-35" width="48" height="66" preserveAspectRatio="xMidYMid meet"/>' +
           '<circle cx="0" cy="-23" r="10" fill="' + colors[i] + '" stroke="#FFFFFF" stroke-width="2"/><text x="0" y="-19" font-size="10" text-anchor="middle" font-weight="1000" fill="#18203A">' + (i + 1) + '</text>' +
@@ -1553,7 +1556,11 @@
         '<div class="race-scene-hud race-sub-hud"><span id="race-level">LEVEL 1 · EASY TRAFFIC</span><span id="race-clean-passes">0 CLEAN PASSES</span></div>' +
         '<svg id="race-track" class="race-track traffic-track" viewBox="0 0 800 380" role="img" aria-label="Vertical scrolling traffic race with cars to dodge" preserveAspectRatio="xMidYMid meet">' +
         '<defs><linearGradient id="raceGrass" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#247C68"/><stop offset="1" stop-color="#0E5148"/></linearGradient><linearGradient id="raceRoad" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#171F34"/><stop offset=".5" stop-color="#2B354C"/><stop offset="1" stop-color="#171F34"/></linearGradient><pattern id="roadTexture" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M0 24 L24 0" stroke="#FFFFFF" stroke-width="1" opacity=".035"/></pattern></defs>' +
-        '<rect width="800" height="380" rx="18" fill="url(#raceGrass)"/><rect x="92" y="-4" width="616" height="388" rx="9" fill="#F6F8FC" opacity=".1"/><rect x="120" y="0" width="560" height="380" fill="url(#raceRoad)"/><rect x="120" y="0" width="560" height="380" fill="url(#roadTexture)"/>' +
+        '<rect width="800" height="380" rx="18" fill="url(#raceGrass)"/>' +
+        '<g class="race-city-silhouette" aria-hidden="true"><path d="M0 380V278H17V244H33V286H48V220H68V266H83V196H99V249H119V380Z M681 380V262H699V218H718V271H735V231H753V184H775V248H800V380Z" fill="#071c27" opacity=".48"/>' +
+        '<g fill="#a6f7e3" opacity=".52"><path d="M21 260h5v7h-5zM21 274h5v7h-5zM54 236h6v8h-6zM54 252h6v8h-6zM88 212h6v8h-6zM88 228h6v8h-6zM708 235h5v8h-5zM708 251h5v8h-5zM741 246h6v8h-6zM741 262h6v8h-6zM761 200h6v8h-6zM761 216h6v8h-6z"/></g></g>' +
+        '<rect x="92" y="-4" width="616" height="388" rx="9" fill="#F6F8FC" opacity=".1"/><rect x="120" y="0" width="560" height="380" fill="url(#raceRoad)"/><rect x="120" y="0" width="560" height="380" fill="url(#roadTexture)"/>' +
+        '<g class="race-road-glow" aria-hidden="true"><path d="M121 0V380 M679 0V380" stroke="#72f7eb" stroke-width="3" opacity=".6"/><path d="M126 0V380 M674 0V380" stroke="#d2fff7" stroke-width="1" opacity=".35"/></g>' +
         '<path d="M120 0V380 M680 0V380" stroke="#FFE27A" stroke-width="5"/>' + laneLines +
         '<g id="road-dash-marks">' + roadside + '</g>' +
         '<path d="M100 0V380 M700 0V380" stroke="#D0D8E9" stroke-width="3" stroke-dasharray="10 10" opacity=".24"/>' +
@@ -1611,13 +1618,22 @@
     } else if (id === "star_snatch") {
       html = '<div class="star-snatch-scene"><div class="star-snatch-hud"><span class="star-snatch-kicker">STAR SNATCH</span><span id="star-level">SPEED 1</span></div><div class="arena-big star-score-live" id="star-score-live">CATCH THE STAR ✦</div><h2>Tap when the star crosses the gold zone</h2><p>Early and late taps cost points. Timing gets quicker every five seconds.</p><div class="star-meter"><span class="star-target-zone"></span><span class="star-center-line"></span><span class="star-cursor" id="star-cursor" style="left:' + game.starX + '%"><img src="' + puzzleAsset("particleCartoonStar.png") + '" alt="" draggable="false"></span></div><div class="star-meter-legend"><span>TOO EARLY</span><span>PERFECT ZONE</span><span>TOO LATE</span></div></div>';
     } else if (id === "tic_tac_toe") {
+      const winningLine = game.tttWinner && game.tttWinner !== "DRAW"
+        ? TTT_LINES.find(function (line) { return line.every(function (n) { return game.tttBoard[n] === game.tttWinner; }); })
+        : null;
       const tiles = game.tttBoard.map(function (mark, index) {
-        const win = game.tttWinner && game.tttWinner !== "DRAW" && TTT_LINES.some(function (line) { return line.includes(index) && line.every(function (n) { return game.tttBoard[n] === game.tttWinner; }); });
-        return '<button class="ttt-cell ' + (mark ? "marked marked-" + mark.toLowerCase() : "") + (win ? " winning-cell" : "") + '" data-action="board-move" data-index="' + index + '" aria-label="Tic Tac Toe cell ' + (index + 1) + (mark ? " " + mark : " empty") + '"' + (game.tttOver || mark || (game.aiOpponent && game.tttTurn === 1) ? " disabled" : "") + '>' + (mark || "") + '</button>';
+        const win = !!(winningLine && winningLine.includes(index));
+        const markSvg = mark === "X"
+          ? '<svg class="ttt-mark-svg" viewBox="0 0 100 100" aria-hidden="true"><path d="M27 27 L73 73 M73 27 L27 73"/></svg>'
+          : (mark === "O" ? '<svg class="ttt-mark-svg" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="30"/></svg>' : "");
+        return '<button class="ttt-cell ' + (mark ? "marked marked-" + mark.toLowerCase() : "") + (win ? " winning-cell" : "") + '" data-action="board-move" data-index="' + index + '" aria-label="Tic Tac Toe cell ' + (index + 1) + (mark ? " " + mark : " empty") + '"' + (game.tttOver || mark || (game.aiOpponent && game.tttTurn === 1) ? " disabled" : "") + '>' + markSvg + '</button>';
       }).join("");
+      const winLineSvg = winningLine
+        ? '<svg class="ttt-win-line" viewBox="0 0 300 300" aria-hidden="true"><path d="M' + (50 + (winningLine[0] % 3) * 100) + ' ' + (50 + Math.floor(winningLine[0] / 3) * 100) + ' L' + (50 + (winningLine[2] % 3) * 100) + ' ' + (50 + Math.floor(winningLine[2] / 3) * 100) + '"/></svg>'
+        : "";
       const currentSymbol = game.tttTurn === 0 ? "X" : "O";
       const turnText = game.tttOver ? (game.tttWinner === "DRAW" ? "DRAW GAME" : game.tttWinner + " WINS!") : (game.aiOpponent && game.tttTurn === 1 ? "BOT IS THINKING…" : "PLAYER " + (game.tttTurn + 1) + " · " + currentSymbol + "'S TURN");
-      html = '<div class="board-game-scene ttt-scene"><div class="board-game-kicker">CLASSIC MODE</div><h2>TIC-TAC-TOE</h2><p>' + (game.aiOpponent ? "You are X. The bot plays O." : "Take turns, get three in a row, and do not leave the corner open.") + '</p><div class="board-turn-label" id="board-turn-label">' + turnText + '</div><div class="ttt-board" role="grid" aria-label="Tic-Tac-Toe board">' + tiles + '</div><div class="board-game-foot">3 IN A ROW WINS · DRAW IS A TIE</div></div>';
+      html = '<div class="board-game-scene ttt-scene"><div class="board-game-kicker">CLASSIC MODE</div><h2>TIC-TAC-TOE</h2><p>' + (game.aiOpponent ? "You are X. The bot plays O." : "Take turns, get three in a row, and do not leave the corner open.") + '</p><div class="board-turn-label" id="board-turn-label">' + turnText + '</div><div class="ttt-board" role="grid" aria-label="Tic-Tac-Toe board">' + tiles + winLineSvg + '</div><div class="board-game-foot">3 IN A ROW WINS · DRAW IS A TIE</div></div>';
     } else if (id === "connect_four") {
       const cells = game.connectBoard.map(function (disc, index) {
         const col = index % 7;
