@@ -1295,7 +1295,7 @@
       if (game.id === "block_battle") return p.blockScore;
       if (game.id === "orb_dash") return p.hits * 10;
       if (game.id === "star_snatch") return p.hits * 10 - p.misses * 3;
-      if (game.id === "stack_tower") return p.stackScore + p.stackHeight * 10;
+      if (game.id === "stack_tower") return p.stackScore;
       return 0;
     });
   }
@@ -1424,7 +1424,7 @@
     sfx("place");
     if (endTicRound()) return;
     game.tttTurn = symbol === "X" ? 1 : 0;
-    game.players[0].status = game.tttTurn === 0 ? "YOUR MOVE · X" : "THINKING…";
+    game.players[0].status = game.tttTurn === 0 ? "YOUR MOVE · X" : (game.aiOpponent ? "THINKING…" : "X PLAYED");
     game.players[1].status = game.tttTurn === 1 ? (game.aiOpponent ? "BOT THINKING…" : "YOUR MOVE · O") : (game.aiOpponent ? "AI OPPONENT" : "PLAYER 2");
     renderGame();
     if (game.aiOpponent && game.tttTurn === 1) {
