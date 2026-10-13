@@ -11,7 +11,7 @@
     { id: "tap_sprint", title: "Tap Sprint", category: "SPEED", desc: "Mash the button. Own the leaderboard.", color: "#2eb8e8", soft: "#dff6fd", length: "10 SEC" },
     { id: "reflex_rush", title: "Reflex Rush", category: "REACTION", desc: "Wait for GO. Don't jump the gun.", color: "#ff6c84", soft: "#ffeaee", length: "ONE SHOT" },
     { id: "memory_grid", title: "Memory Grid", category: "BRAIN", desc: "Remember the pattern. Repeat it perfectly.", color: "#9875ef", soft: "#f0eaff", length: "TURN BASED" },
-    { id: "mini_racers", title: "Mini Racers", category: "RACING", desc: "Hold to drive. Use nitro to reach the finish.", color: "#ffad4d", soft: "#fff0dd", length: "12 SEC" },
+    { id: "mini_racers", title: "Mini Racers", category: "RACING", desc: "Steer around cones, boost past rivals, and reach the finish.", color: "#ffad4d", soft: "#fff0dd", length: "12 SEC" },
     { id: "dodge_arena", title: "Dodge Arena", category: "SURVIVAL", desc: "Dodge on the signal. Last player wins.", color: "#47c995", soft: "#e1f8ed", length: "8 WAVES" },
     { id: "target_rush", title: "Target Rush", category: "ACCURACY", desc: "Hit the matching color before time runs out.", color: "#ed7ac4", soft: "#fdeafa", length: "12 SEC" },
     { id: "block_battle", title: "Block Battle", category: "PUZZLE", desc: "Place shapes, clear lines, and beat every score.", color: "#4d8dff", soft: "#e9f1ff", length: "35 SEC EACH" },
@@ -139,7 +139,7 @@
           '<div class="hero-spark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 2L60 37L96 50L60 62L50 98L39 62L4 50L39 37Z" fill="#ffe16b"/><circle cx="79" cy="18" r="7" fill="#ff7188"/><circle cx="20" cy="76" r="5" fill="#5ed0ed"/></svg></div>' +
           '<span class="eyebrow"><span class="star">✦</span> THE LIVING ROOM ARCADE</span>' +
           '<h1>One phone.<br><span>Four players.</span><br>Big chaos.</h1>' +
-          '<p>Pick your players, choose your challenge, and fight for the crown. Six mini-games, real-time action, and zero Wi-Fi required.</p>' +
+          '<p>Pick your players, choose your challenge, and fight for the crown. Eight mini-games, real-time action, and zero Wi-Fi required.</p>' +
           '<div class="hero-bottom"><div class="hero-stat"><strong>08</strong><small>Mini games</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>1–4</strong><small>Players</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>0</strong><small>Wi-Fi required</small></div></div>' +
         '</div>' +
         '<div class="settings-card">' +
@@ -590,7 +590,7 @@
       const obstacleSteps = [118, 218, 318, 418, 518];
       game.raceObstacles = game.players.map(function (_, playerIndex) {
         return obstacleSteps.map(function (progress, obstacleIndex) {
-          return { progress: progress, offset: (Math.random() < 0.5 ? -1 : 1) * 0.72, passed: false, player: playerIndex, id: obstacleIndex };
+          return { progress: progress, offset: [-0.72, 0, 0.72][Math.floor(Math.random() * 3)], passed: false, player: playerIndex, id: obstacleIndex };
         });
       });
     }
@@ -640,15 +640,32 @@
       if (timer) timer.textContent = fmtTime(game.timeLeft);
       if (game.id === "mini_racers") {
         let crossedFinish = false;
-        game.players.forEach(function (p) {
-          p.raceSpeed = p.throttle ? Math.min(88, p.raceSpeed + 112 * dt) : Math.max(0, p.raceSpeed - 145 * dt);
+        game.players.forEach(function (p, i) {
+          const previousProgress = p.progress;
+          p.throttle = !!p.throttleButtonHeld || p.joystickY < -0.15;
+          p.raceSpeed = p.throttle ? Math.min(92, p.raceSpeed + 126 * dt) : Math.max(0, p.raceSpeed - 118 * dt);
           p.progress = Math.min(615, p.progress + p.raceSpeed * dt);
+          (game.raceObstacles[i] || []).forEach(function (obstacle) {
+            if (obstacle.passed || previousProgress >= obstacle.progress || p.progress < obstacle.progress) return;
+            obstacle.passed = true;
+            if (Math.abs(p.raceSteer - obstacle.offset) < 0.46) {
+              p.raceSpeed = Math.max(12, p.raceSpeed - 30);
+              p.misses++;
+              p.status = "CONE HIT · SPEED LOST";
+              sfx("bump");
+            } else {
+              p.cleanPasses++;
+              p.raceSpeed = Math.min(96, p.raceSpeed + 9);
+              p.status = "CLEAN PASS · +BOOST";
+              sfx("boost");
+            }
+          });
           if (p.progress >= 615) {
             p.status = "FINISH!";
             crossedFinish = true;
-          } else if (p.throttle) {
+          } else if (p.throttle && !String(p.status).includes("CONE HIT")) {
             p.status = "DRIVING · " + Math.round(p.raceSpeed) + " SPEED";
-          } else if (p.raceSpeed > 2) {
+          } else if (p.raceSpeed > 2 && !String(p.status).includes("CONE HIT")) {
             p.status = "COASTING · " + Math.round(p.raceSpeed) + " SPEED";
           }
         });
@@ -682,7 +699,7 @@
           p.hits++;
           p.status = "GEM +10 · " + (p.hits * 10) + " PTS";
           game.orbTarget = spawnOrbTarget();
-          beep(780 + i * 45, 0.07, "sine");
+          sfx("gem", i * 28);
         } else if (Math.abs(p.joystickX) + Math.abs(p.joystickY) > 0.2) {
           p.status = "MOVING · " + (p.hits * 10) + " PTS";
         }
@@ -781,9 +798,10 @@
       }
     } else if (game.id === "mini_racers" && game.timeLeft > 0 && p.progress < 615) {
       p.boosts++;
-      p.raceSpeed = Math.min(88, p.raceSpeed + 18);
+      p.raceSpeed = Math.min(96, p.raceSpeed + 24);
+      p.boostFlash = performance.now() + 380;
       p.status = "NITRO BOOST! " + p.boosts;
-      beep(210 + (pIndex * 75), 0.06, "sawtooth");
+      sfx("boost", pIndex * 22);
       updateRaceTrack();
     } else if (game.id === "reflex_rush") {
       if (p.responded) return;
@@ -956,7 +974,7 @@
     game.points = points;
     game.ranks = ranks;
     currentScreen = "result";
-    beep(580, 0.1, "triangle");
+    sfx("win");
     renderResult();
   }
 
@@ -1125,12 +1143,22 @@
     }
   }
   function handleAction(action, el) {
-    if (action === "players") { settings.players = Number(el.dataset.value); saveSettings(); renderHome(); }
+    if (action === "players") { settings.players = Number(el.dataset.value); saveSettings(); sfx("select"); renderHome(); }
     else if (action === "rounds") { settings.rounds = Number(el.dataset.value); saveSettings(); renderHome(); }
     else if (action === "play") renderGameSelect();
     else if (action === "block-piece") {
-      if (game && game.id === "block_battle") { game.selectedPiece = Number(el.dataset.piece); renderGame(); }
+      if (game && game.id === "block_battle") {
+        game.selectedPiece = Number(el.dataset.piece);
+        const player = game.players[game.activePuzzlePlayer];
+        const move = findBestBlockMove(player, game.selectedPiece);
+        if (move) player.blockCursor = { row: move.row, col: move.col };
+        sfx("select");
+        renderGame();
+      }
     }
+    else if (action === "block-rotate") rotateSelectedBlock();
+    else if (action === "block-hint") suggestBlockMove();
+    else if (action === "block-place-cursor") releaseBlockCursor();
     else if (action === "block-place") placeBlockPiece(Number(el.dataset.row), Number(el.dataset.col));
     else if (action === "quick-play") startQuickGame(el.dataset.game);
     else if (action === "start-tournament") startTournament();
@@ -1227,7 +1255,10 @@
     racePointerOwners.delete(event.pointerId);
     if (!game || game.id !== "mini_racers") return;
     const stillHeld = Array.from(racePointerOwners.values()).includes(playerIndex);
-    if (game.players[playerIndex]) game.players[playerIndex].throttle = stillHeld;
+    if (game.players[playerIndex]) {
+      game.players[playerIndex].throttleButtonHeld = stillHeld;
+      game.players[playerIndex].throttle = stillHeld || game.players[playerIndex].joystickY < -0.15;
+    }
     const buttons = root.querySelectorAll('[data-action="player"][data-player="' + playerIndex + '"]');
     buttons.forEach(function (button) { button.classList.toggle("racing-active", stillHeld); });
   }
@@ -1239,6 +1270,7 @@
     if (!button || !root.contains(button)) return;
     const action = button.dataset.action;
     if (action === "player" || action === "color" || action === "joystick" || action === "block-place" || action === "block-piece") event.preventDefault();
+    if (["play","home","quick-play","start-tournament","game-menu","players","rounds","next-round","final","rematch"].indexOf(action) >= 0) sfx("ui");
     handleAction(action, button);
   });
   document.getElementById("sound-toggle").addEventListener("click", function () {
