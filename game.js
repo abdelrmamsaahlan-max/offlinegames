@@ -218,6 +218,7 @@
   function renderSettingsModal() {
     closeSettingsModal();
     const themeLabels = { nebula: "NEBULA", ocean: "OCEAN", sunset: "SUNSET" };
+    const accentOptions = { "#5848d8": "PURPLE", "#159da8": "TEAL", "#df4f80": "PINK", "#d68d17": "GOLD", "#3e7be8": "BLUE" };
     const difficultyLabels = { chill: "CHILL", normal: "NORMAL", chaos: "CHAOS" };
     root.insertAdjacentHTML("beforeend",
       '<div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">' +
@@ -226,6 +227,8 @@
           '<section class="setting-section"><h3>COLOR THEME</h3><div class="setting-options">' +
             Object.keys(themeLabels).map(function (theme) { return '<button class="setting-choice ' + (settings.theme === theme ? "selected" : "") + '" data-action="setting-theme" data-value="' + theme + '"><span class="theme-swatch theme-' + theme + '"></span>' + themeLabels[theme] + '</button>'; }).join("") +
           '</div></section>' +
+          '<section class="setting-section"><h3>APPEARANCE</h3><div class="setting-options"><button class="setting-choice ' + (settings.appearance === "light" ? "selected" : "") + '" data-action="setting-appearance" data-value="light">☀ LIGHT</button><button class="setting-choice ' + (settings.appearance === "dark" ? "selected" : "") + '" data-action="setting-appearance" data-value="dark">☾ DARK</button></div></section>' +
+          '<section class="setting-section"><h3>ACCENT COLOR</h3><div class="setting-options">' + Object.keys(accentOptions).map(function (accent) { return '<button class="setting-choice ' + (settings.accent === accent ? "selected" : "") + '" data-action="setting-accent" data-value="' + accent + '"><span class="theme-swatch" style="background:' + accent + '"></span>' + accentOptions[accent] + '</button>'; }).join("") + '</div></section>' +
           '<section class="setting-section"><h3>GAME DIFFICULTY</h3><p>Affects traffic pace and timing challenge.</p><div class="setting-options">' +
             Object.keys(difficultyLabels).map(function (level) { return '<button class="setting-choice ' + (settings.difficulty === level ? "selected" : "") + '" data-action="setting-difficulty" data-value="' + level + '">' + difficultyLabels[level] + '</button>'; }).join("") +
           '</div></section>' +
@@ -1529,7 +1532,7 @@
         const tileColor = colors[(game.activeStackPlayer + index) % colors.length];
         return '<g class="stack-layer"><rect x="' + layer.x + '" y="' + y + '" width="' + layer.width + '" height="19" rx="4" fill="' + tileColor + '" stroke="#FFFFFF" stroke-width="1.5"/><path d="M' + (layer.x + 6) + ' ' + (y + 4) + ' H' + (layer.x + layer.width - 6) + '" stroke="#FFFFFF" stroke-width="2" opacity=".45"/></g>';
       }).join("");
-      const movingY = 242 - player.stackHeight * 22;
+      const movingY = 242 - (player.stackHeight + 1) * 22;
       html = '<div class="stack-scene"><div class="stack-hud"><span class="stack-kicker">STACK TOWER · PLAYER ' + (game.activeStackPlayer + 1) + '</span><span id="stack-height-live">LAYER ' + player.stackHeight + ' / 8</span></div><strong>Line up the block. Drop on the beat.</strong><p>Only the overlap stays. Perfect alignment earns bonus points.</p><svg class="stack-track" viewBox="0 0 760 280" role="img" aria-label="Stack Tower moving block timing game"><defs><linearGradient id="stackSky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#17234B"/><stop offset="1" stop-color="#463990"/></linearGradient><linearGradient id="stackFloor" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#495B83"/><stop offset="1" stop-color="#253455"/></linearGradient></defs><rect width="760" height="280" rx="20" fill="url(#stackSky)"/><path d="M0 55H760M0 100H760M0 145H760M0 190H760M0 235H760" stroke="#FFFFFF" stroke-width="1" opacity=".07"/><path d="M80 0V280M160 0V280M240 0V280M320 0V280M400 0V280M480 0V280M560 0V280M640 0V280M720 0V280" stroke="#FFFFFF" stroke-width="1" opacity=".05"/>' + layerMarkup + '<rect id="stack-moving-block" x="' + game.stackX + '" y="' + movingY + '" width="' + player.stackWidth + '" height="19" rx="4" fill="' + colors[game.activeStackPlayer] + '" stroke="#FFFFFF" stroke-width="2"/><path d="M30 261H730" stroke="#A5B8E8" stroke-width="3" stroke-linecap="round" opacity=".48"/><circle cx="30" cy="261" r="5" fill="#FFE27A"/><circle cx="730" cy="261" r="5" fill="#FFE27A"/></svg><div class="stack-tip">Each player gets up to eight drops. A tiny overlap will collapse the tower.</div></div>';
     } else if (id === "block_battle") {
       const player = game.players[game.activePuzzlePlayer];
@@ -1671,12 +1674,18 @@
     }
   }
   function handleAction(action, el) {
-    if (action === "settings-close") closeSettingsModal();
+    if (action === "settings-open") renderSettingsModal();
+    else if (action === "favorite") toggleFavorite(el.dataset.game);
+    else if (action === "library-category") { activeCategory = el.dataset.value; renderGameSelect(); }
+    else if (action === "library-reset") { libraryQuery = ""; activeCategory = "ALL"; librarySort = "featured"; renderGameSelect(); }
+    else if (action === "settings-close") closeSettingsModal();
     else if (action === "setting-theme") { settings.theme = el.dataset.value; saveSettings(); renderSettingsModal(); }
     else if (action === "setting-difficulty") { settings.difficulty = el.dataset.value; saveSettings(); renderSettingsModal(); }
+    else if (action === "setting-appearance") { settings.appearance = el.dataset.value; saveSettings(); renderSettingsModal(); }
+    else if (action === "setting-accent") { settings.accent = el.dataset.value; saveSettings(); renderSettingsModal(); }
     else if (action === "setting-sound") { settings.sound = !settings.sound; saveSettings(); renderSettingsModal(); }
     else if (action === "setting-motion") { settings.motion = !settings.motion; saveSettings(); renderSettingsModal(); }
-    else if (action === "settings-reset") { settings.theme = "nebula"; settings.difficulty = "normal"; settings.motion = true; settings.sound = true; saveSettings(); renderSettingsModal(); }
+    else if (action === "settings-reset") { settings.theme = "nebula"; settings.difficulty = "normal"; settings.appearance = "light"; settings.accent = "#5848d8"; settings.motion = true; settings.sound = true; saveSettings(); renderSettingsModal(); }
     else if (action === "players") { settings.players = Number(el.dataset.value); saveSettings(); sfx("select"); renderHome(); }
     else if (action === "rounds") { settings.rounds = Number(el.dataset.value); saveSettings(); renderHome(); }
     else if (action === "play") renderGameSelect();
