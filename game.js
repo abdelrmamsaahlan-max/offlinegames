@@ -34,6 +34,7 @@
   ];
   let settings = { players: 2, rounds: 5, sound: true, theme: "nebula", difficulty: "normal", motion: true, appearance: "light", accent: "#5848d8" };
   let libraryQuery = "", activeCategory = "ALL", librarySort = "featured";
+  let librarySearchTimer = null;
   let favoriteIds = [], recentGames = [], highScores = {};
   let currentScreen = "home";
   let game = null;
@@ -314,6 +315,10 @@
     saveLibraryState();
   }
   function renderGameSelect() {
+    if (librarySearchTimer !== null) {
+      window.clearTimeout(librarySearchTimer);
+      librarySearchTimer = null;
+    }
     currentScreen = "select";
     const categories = ["ALL","PARTY","ARCADE","RACING","PUZZLE","CLASSICS"];
     let filtered = gameList.filter(function (g) {
@@ -1979,13 +1984,21 @@
   root.addEventListener("input", function (event) {
     if (!event.target || event.target.id !== "library-search") return;
     libraryQuery = event.target.value || "";
-    const cursor = libraryQuery.length;
-    renderGameSelect();
-    const next = root.querySelector("#library-search");
-    if (next) {
-      next.focus();
-      try { next.setSelectionRange(cursor, cursor); } catch (e) {}
-    }
+    let cursor = libraryQuery.length;
+    try {
+      if (typeof event.target.selectionStart === "number") cursor = event.target.selectionStart;
+    } catch (e) {}
+    if (librarySearchTimer !== null) window.clearTimeout(librarySearchTimer);
+    librarySearchTimer = window.setTimeout(function () {
+      librarySearchTimer = null;
+      if (currentScreen !== "select") return;
+      renderGameSelect();
+      const next = root.querySelector("#library-search");
+      if (next) {
+        next.focus();
+        try { next.setSelectionRange(cursor, cursor); } catch (e) {}
+      }
+    }, 160);
   });
   root.addEventListener("change", function (event) {
     if (event.target && event.target.id === "library-sort") {
