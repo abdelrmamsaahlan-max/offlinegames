@@ -11,11 +11,13 @@
     { id: "tap_sprint", title: "Tap Sprint", category: "SPEED", desc: "Mash the button. Own the leaderboard.", color: "#2eb8e8", soft: "#dff6fd", length: "10 SEC" },
     { id: "reflex_rush", title: "Reflex Rush", category: "REACTION", desc: "Wait for GO. Don't jump the gun.", color: "#ff6c84", soft: "#ffeaee", length: "ONE SHOT" },
     { id: "memory_grid", title: "Memory Grid", category: "BRAIN", desc: "Remember the pattern. Repeat it perfectly.", color: "#9875ef", soft: "#f0eaff", length: "TURN BASED" },
-    { id: "mini_racers", title: "Mini Racers", category: "RACING", desc: "Steer around cones, boost past rivals, and reach the finish.", color: "#ffad4d", soft: "#fff0dd", length: "12 SEC" },
+    { id: "mini_racers", title: "Mini Racers", category: "RACING", desc: "Drive through traffic and dodge cars as the rush gets faster.", color: "#ffad4d", soft: "#fff0dd", length: "30 SEC" },
     { id: "dodge_arena", title: "Dodge Arena", category: "SURVIVAL", desc: "Dodge on the signal. Last player wins.", color: "#47c995", soft: "#e1f8ed", length: "8 WAVES" },
     { id: "target_rush", title: "Target Rush", category: "ACCURACY", desc: "Hit the matching color before time runs out.", color: "#ed7ac4", soft: "#fdeafa", length: "12 SEC" },
-    { id: "block_battle", title: "Block Battle", category: "PUZZLE", desc: "Place shapes, clear lines, and beat every score.", color: "#4d8dff", soft: "#e9f1ff", length: "35 SEC EACH" },
-    { id: "orb_dash", title: "Orb Dash", category: "MOVEMENT", desc: "Steer your orb, grab gems, and dodge rivals.", color: "#7d65f2", soft: "#eeebff", length: "30 SEC" }
+    { id: "block_battle", title: "Block Battle", category: "PUZZLE", desc: "Place glossy blocks, plan clears, and build giant combos.", color: "#4d8dff", soft: "#e9f1ff", length: "35 SEC EACH" },
+    { id: "orb_dash", title: "Orb Dash", category: "MOVEMENT", desc: "Steer your orb, grab gems, and dodge rivals.", color: "#7d65f2", soft: "#eeebff", length: "30 SEC" },
+    { id: "star_snatch", title: "Star Snatch", category: "TIMING", desc: "Tap when the moving star hits the sweet spot.", color: "#f6bd43", soft: "#fff5d7", length: "15 SEC" },
+    { id: "stack_tower", title: "Stack Tower", category: "SKILL", desc: "Drop moving blocks, keep your tower balanced, and climb.", color: "#5a9cff", soft: "#eaf3ff", length: "8 SEC PER PLAYER" }
   ];
   // Deliberately varied, normalized polyominoes from 1–5 cells. Pieces rotate in play.
   const BLOCK_SHAPES = [
@@ -28,7 +30,7 @@
     [[1,0],[0,1],[1,1],[1,2],[2,2]], [[0,0],[1,0],[2,0],[0,1],[1,1]],
     [[0,0],[1,0],[2,0],[2,1],[2,2]], [[0,0],[0,1],[0,2],[1,0],[1,1]]
   ];
-  let settings = { players: 2, rounds: 5, sound: true };
+  let settings = { players: 2, rounds: 5, sound: true, theme: "nebula", difficulty: "normal", motion: true };
   let currentScreen = "home";
   let game = null;
   let tournament = null;
@@ -41,12 +43,20 @@
     if (saved.players) settings.players = Math.max(1, Math.min(4, Number(saved.players) || 2));
     if (saved.rounds === 10) settings.rounds = 10;
     settings.sound = saved.sound !== false;
+    if (["nebula", "ocean", "sunset"].includes(saved.theme)) settings.theme = saved.theme;
+    if (["chill", "normal", "chaos"].includes(saved.difficulty)) settings.difficulty = saved.difficulty;
+    settings.motion = saved.motion !== false;
   } catch (e) {}
 
-  function saveSettings() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (e) {}
+  function applySettings() {
+    document.documentElement.dataset.theme = settings.theme;
+    document.documentElement.classList.toggle("reduced-motion", !settings.motion);
     const soundBtn = document.getElementById("sound-toggle");
     if (soundBtn) soundBtn.classList.toggle("is-muted", !settings.sound);
+  }
+  function saveSettings() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(settings)); } catch (e) {}
+    applySettings();
   }
   function gameById(id) { return gameList.find(function (g) { return g.id === id; }) || gameList[0]; }
   function escapeText(value) {
@@ -143,8 +153,8 @@
           '<div class="hero-spark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 2L60 37L96 50L60 62L50 98L39 62L4 50L39 37Z" fill="#ffe16b"/><circle cx="79" cy="18" r="7" fill="#ff7188"/><circle cx="20" cy="76" r="5" fill="#5ed0ed"/></svg></div>' +
           '<span class="eyebrow"><span class="star">✦</span> THE LIVING ROOM ARCADE</span>' +
           '<h1>One phone.<br><span>Four players.</span><br>Big chaos.</h1>' +
-          '<p>Pick your players, choose your challenge, and fight for the crown. Eight mini-games, real-time action, and zero Wi-Fi required.</p>' +
-          '<div class="hero-bottom"><div class="hero-stat"><strong>08</strong><small>Mini games</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>1–4</strong><small>Players</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>0</strong><small>Wi-Fi required</small></div></div>' +
+          '<p>Pick your players, choose your challenge, and fight for the crown. Ten mini-games, real-time action, and zero Wi-Fi required.</p>' +
+          '<div class="hero-bottom"><div class="hero-stat"><strong>10</strong><small>Mini games</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>1–4</strong><small>Players</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>0</strong><small>Wi-Fi required</small></div></div>' +
         '</div>' +
         '<div class="settings-card">' +
           '<div class="section-heading"><div><h2>Build your party</h2><p>Pass one device around or crowd around the screen.</p></div><span class="step-mark">STEP 01 / 02</span></div>' +
@@ -190,7 +200,9 @@
       board: Array(64).fill(null), blockPieces: [], blockScore: 0, blockLines: 0, blockStreak: 0,
       blockCursor: { row: 3, col: 3 }, lastPlaced: [], lastCleared: [],
       orbX: 50, orbY: 50, joystickX: 0, joystickY: 0, raceSteer: 0, cleanPasses: 0,
-      throttleButtonHeld: false, boostFlash: 0, raceEvent: "", raceEventUntil: 0
+      throttleButtonHeld: false, boostFlash: 0, raceEvent: "", raceEventUntil: 0,
+      trafficSpawnCooldown: 0.6, raceCrashUntil: 0, starCooldownUntil: 0,
+      stackWidth: 220, stackHeight: 0, stackScore: 0, stackAlive: true, stackLayers: [], stackDrops: 0
     };
   }
   function spawnOrbTarget() {
@@ -608,7 +620,7 @@
   }
   function startGame(id, inTournament) {
     const g = gameById(id);
-    const duration = id === "tap_sprint" ? 10 : ((id === "mini_racers" || id === "target_rush") ? 12 : (id === "block_battle" ? 35 : (id === "orb_dash" ? 30 : 0)));
+    const duration = id === "tap_sprint" ? 10 : (id === "mini_racers" ? 30 : (id === "target_rush" ? 12 : (id === "block_battle" ? 35 : (id === "orb_dash" ? 30 : (id === "star_snatch" ? 15 : (id === "stack_tower" ? 8 : 0)))));
     game = {
       id: id, data: g, tournament: inTournament, round: tournament ? tournament.round : 1,
       players: Array.from({ length: settings.players }, newPlayer),
@@ -616,12 +628,17 @@
       startedAt: performance.now(), target: Math.floor(Math.random() * 4), targetCooldown: 0.65,
       sequence: Array.from({ length: settings.players >= 3 ? 6 : 5 }, function () { return Math.floor(Math.random() * 4); }),
       showIndex: -1, memoryPlayer: 0, wave: 1, nextSoundAt: 0,
-      activePuzzlePlayer: 0, selectedPiece: 0, orbTarget: { x: 50, y: 50 }, raceObstacles: []
+      activePuzzlePlayer: 0, selectedPiece: 0, orbTarget: { x: 50, y: 50 }, raceTraffic: [],
+      raceTimeElapsed: 0, raceDifficulty: 0, roadScroll: 0, activeStackPlayer: 0,
+      stackX: 35, stackDirection: 1, stackSpeed: 235, starX: 12, starDirection: 1, starSpeed: 78
     };
     game.players.forEach(function (p, i) {
       p.blockPieces = makeBlockPieces(p.board);
       p.orbX = i % 2 === 0 ? 17 : 83;
       p.orbY = i < 2 ? 24 : 76;
+      p.raceSpeed = 42;
+      p.stackWidth = 220;
+      p.stackLayers = [{ x: 270, width: 220, colorIndex: i }];
     });
     if (id === "block_battle") {
       game.players.forEach(function (p, i) {
@@ -637,16 +654,24 @@
       game.timeLeft = duration;
     }
     if (id === "mini_racers") {
-      const obstacleSteps = [118, 218, 318, 418, 518];
-      game.raceObstacles = game.players.map(function (_, playerIndex) {
-        return obstacleSteps.map(function (progress, obstacleIndex) {
-          return { progress: progress, offset: [-0.72, 0, 0.72][Math.floor(Math.random() * 3)], passed: false, player: playerIndex, id: obstacleIndex };
-        });
-      });
+      game.duration = 30;
+      game.timeLeft = 30;
+      game.raceTraffic = [];
+      game.roadScroll = 0;
+      game.raceTimeElapsed = 0;
+      game.players.forEach(function (p, i) { p.trafficSpawnCooldown = 0.25 + i * 0.12; });
     }
     if (id === "orb_dash") {
       game.orbTarget = spawnOrbTarget();
       game.timeLeft = duration;
+    }
+    if (id === "star_snatch") {
+      game.duration = 15; game.timeLeft = 15; game.starX = 12; game.starDirection = 1;
+      game.starSpeed = settings.difficulty === "chill" ? 62 : (settings.difficulty === "chaos" ? 112 : 78);
+    }
+    if (id === "stack_tower") {
+      game.duration = 8; game.timeLeft = 8; game.activeStackPlayer = 0;
+      game.stackX = 35; game.stackDirection = 1; game.stackSpeed = 235;
     }
     if (id === "reflex_rush") {
       game.phase = "reflex_wait";
