@@ -428,3 +428,123 @@ button{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease,bord
 .race-wheel{animation:none}
 .race-car.car-moving .race-wheel{animation:race-wheel-spin .34s linear infinite}
 .race-car.car-boost.car-moving .race-wheel{animation-duration:.2s}
+
+
+/* Authentic CC0 game sprites, a scrollable road, new game screens, settings. */
+.game-art{position:relative;overflow:hidden;background:linear-gradient(145deg,#f7f9ff,#e0e8fb)}
+.real-art{position:absolute;inset:0;overflow:hidden;isolation:isolate}
+.real-sprite{position:absolute;object-fit:contain;user-select:none;-webkit-user-drag:none;filter:drop-shadow(0 6px 7px rgba(13,25,54,.18))}
+.real-art .asset-badge{position:absolute;left:12px;bottom:10px;padding:6px 9px;border-radius:999px;background:rgba(18,27,53,.86);color:#fff;font-size:8px;letter-spacing:1px;font-weight:1000}
+.sprite-car{height:94%;width:27%;top:3%}
+.sprite-car.car-a{left:20%;transform:rotate(-8deg)}
+.sprite-car.car-b{left:54%;transform:rotate(8deg) translateY(7px)}
+.real-art-mini_racers{background:linear-gradient(135deg,#0c634f,#1ea580)}
+.real-art-mini_racers:before{content:"";position:absolute;inset:0 18%;background:linear-gradient(90deg,#1e263b,#37425a,#1c253a);border-left:4px solid #ffe27a;border-right:4px solid #ffe27a}
+.asset-lane-lines{position:absolute;inset:-20% 49%;width:3px;background:repeating-linear-gradient(180deg,#f3f6ff 0 19px,transparent 19px 43px);animation:asset-road-scroll .7s linear infinite}
+@keyframes asset-road-scroll{to{background-position:0 43px}}
+.real-art-block_battle{background:radial-gradient(circle at 55% 35%,#fbfdff,#cddaff 85%)}
+.puzzle-sprite{width:22%;height:43%}
+.puzzle-sprite-0{left:23%;top:22%;transform:rotate(-6deg)}
+.puzzle-sprite-1{left:45%;top:22%;transform:rotate(5deg)}
+.puzzle-sprite-2{left:34%;top:43%;transform:rotate(4deg)}
+.puzzle-sprite-3{left:56%;top:43%;transform:rotate(-5deg)}
+.memory-sprite,.target-sprite,.tap-sprite,.reflex-sprite{width:18%;height:36%;border-radius:8px}
+.memory-sprite-0,.target-sprite-0,.tap-sprite-0,.reflex-sprite-0{left:22%;top:20%;transform:rotate(-7deg)}
+.memory-sprite-1,.target-sprite-1,.tap-sprite-1,.reflex-sprite-1{left:42%;top:43%;transform:rotate(6deg)}
+.memory-sprite-2,.target-sprite-2,.tap-sprite-2,.reflex-sprite-2{left:61%;top:19%;transform:rotate(-3deg)}
+.memory-sprite-3,.target-sprite-3,.tap-sprite-3{left:72%;top:46%;transform:rotate(8deg)}
+.real-art-memory_grid{background:linear-gradient(145deg,#2a225c,#a896ff)}
+.real-art-target_rush{background:linear-gradient(145deg,#441f42,#f59cc8)}
+.real-art-tap_sprint{background:linear-gradient(145deg,#165b86,#64d7fa)}
+.real-art-reflex_rush{background:linear-gradient(145deg,#171c36,#ff91a5)}
+.sprite-star{width:35%;height:60%;object-fit:contain}
+.star-large{left:32%;top:20%;animation:gem-float .9s ease-in-out infinite alternate}
+.star-small{left:58%;top:40%;width:19%;height:35%;animation:gem-float .7s ease-in-out infinite alternate-reverse}
+.real-art-star_snatch{background:linear-gradient(140deg,#3b2869,#b68eff)}
+.tower-crate{width:46%;height:70%;left:27%;top:26%}
+.tower-block{width:24%;height:38%;left:53%;top:13%}
+.tower-block-high{left:66%;top:42%;width:18%;height:29%}
+.real-art-stack_tower{background:linear-gradient(145deg,#172448,#8c80ff)}
+.sprite-gem{width:26%;height:47%;left:53%;top:24%;animation:gem-float .8s ease-in-out infinite alternate}
+.sprite-orb{width:25%;height:45%;left:20%;top:48%}
+.orb-blue{filter:drop-shadow(0 0 10px #5ee6ff)}
+.sprite-danger{width:18%;height:34%;left:65%;top:26%;transform:rotate(12deg)}
+.real-art-orb_dash{background:radial-gradient(circle at 50% 48%,#2d7b91,#111d39)}
+.real-art-dodge_arena{background:linear-gradient(135deg,#fff1c5,#ffa44b)}
+.block-cell.filled{
+  background-color:var(--block-color);
+  background-image:var(--block-sprite),linear-gradient(145deg,color-mix(in srgb,var(--block-color),white 11%),var(--block-color) 68%,color-mix(in srgb,var(--block-color),#151b32 12%));
+  background-size:cover,cover;background-position:center;background-repeat:no-repeat;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.16),inset 0 -3px 0 rgba(13,24,48,.22),0 2px 3px rgba(0,0,0,.12);
+}
+.block-cell.ghost-valid{background-image:var(--block-sprite),linear-gradient(145deg,rgba(255,255,255,.2),color-mix(in srgb,var(--block-color),transparent 28%));background-size:cover,cover;opacity:.95}
+.stack-track{display:block;width:100%;height:auto;max-height:390px}
+.stack-scene,.star-snatch-scene{width:min(780px,100%);padding:clamp(14px,3vw,26px);border-radius:24px;background:linear-gradient(145deg,#f6f7ff,#e6eafd);border:1px solid #fff;box-shadow:0 14px 40px rgba(20,30,70,.08)}
+.stack-hud,.star-snatch-hud{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#5c6684;font-size:10px;font-weight:1000;letter-spacing:1px}
+.stack-kicker,.star-snatch-kicker{color:#5242de}
+.stack-scene>strong{display:block;margin:12px 0 4px;color:#17213c;font-size:clamp(18px,3vw,25px)}
+.stack-scene>p,.star-snatch-scene>p{margin:0 0 14px;color:#6d7891;font-size:12px;line-height:1.6}
+.stack-tip{color:#74809b;font-size:10px;text-align:center;margin-top:12px}
+.star-score-live{color:#5848d8;font-size:clamp(28px,5vw,48px);margin:16px 0 5px}
+.star-snatch-scene h2{font-size:clamp(15px,2.7vw,22px);color:#252c4a;margin:8px 0}
+.star-meter{position:relative;width:100%;height:54px;margin:26px 0 7px;border-radius:999px;overflow:hidden;background:linear-gradient(90deg,#ff7a8a,#ffc56a 28%,#ffea81 43%,#ffe27a 57%,#ffc56a 72%,#ff7a8a);box-shadow:inset 0 3px 7px rgba(34,37,71,.15),0 4px 0 rgba(65,53,140,.1)}
+.star-target-zone{position:absolute;left:43%;width:14%;top:0;bottom:0;border:2px solid #fff;background:rgba(64,224,160,.3);box-shadow:0 0 25px rgba(255,255,255,.6)}
+.star-center-line{position:absolute;left:49.7%;top:-3px;bottom:-3px;width:2px;background:#202844;opacity:.5}
+.star-cursor{position:absolute;top:50%;transform:translate(-50%,-50%);width:44px;height:44px;filter:drop-shadow(0 4px 8px rgba(37,30,84,.3));pointer-events:none;transition:left .04s linear}
+.star-cursor img{width:100%;height:100%;object-fit:contain}
+.star-meter-legend{display:flex;justify-content:space-between;color:#8a91a8;font-size:8px;font-weight:900;letter-spacing:.5px}
+.racing-arena{background:#0b1424}
+.traffic-track{display:block;width:100%;height:auto;max-height:480px;border-radius:18px}
+.race-sub-hud{margin-top:4px;color:#b7c4e0}
+.race-scene-hud{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.race-scene-hud span:first-child{color:#ffe27a}
+.race-bottom-tip{font-size:10px;line-height:1.55;color:#aab8d7;text-align:center;margin:10px auto 0;max-width:590px}
+.traffic-car{transition:transform .075s linear}
+.traffic-car.traffic-resolved{opacity:.7;filter:brightness(.72)}
+.race-car{transition:transform .07s linear}
+.race-car.car-crashed{filter:drop-shadow(0 0 14px #ff3b63);animation:race-hit-flash .13s steps(2,end) infinite}
+.race-crash-flash{opacity:0}
+.car-crashed .race-crash-flash{opacity:1}
+@keyframes race-hit-flash{50%{opacity:.45}}
+.settings-toggle{font-size:20px}
+.settings-modal{position:fixed;inset:0;z-index:500;display:grid;place-items:center;padding:18px;background:rgba(9,16,36,.62);backdrop-filter:blur(11px);animation:arcade-in .18s ease}
+.settings-dialog{width:min(540px,100%);max-height:min(88vh,820px);overflow:auto;border:1px solid rgba(255,255,255,.8);border-radius:26px;background:linear-gradient(145deg,#fff,#eff3ff);box-shadow:0 28px 100px rgba(0,0,0,.35);padding:clamp(19px,4vw,30px);color:#17213c}
+.settings-modal-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:22px}
+.settings-modal-head h2{font-size:27px;margin:5px 0;color:#151d38}
+.settings-modal-head p,.setting-section>p{color:#7a849c;font-size:11px;margin:0}
+.settings-close{border:0;border-radius:13px;background:#e8edfa;color:#222b49;width:38px;height:38px;font-size:24px;cursor:pointer}
+.setting-section{padding:16px 0;border-bottom:1px solid #e4e9f5}
+.setting-section h3{font-size:9px;letter-spacing:1.2px;color:#7d86a0;margin:0 0 11px}
+.setting-options{display:flex;gap:9px;flex-wrap:wrap}
+.setting-choice{flex:1;min-width:110px;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #dce3f3;border-radius:13px;padding:11px 9px;background:#fff;color:#4d5775;font-size:10px;font-weight:1000;letter-spacing:.5px}
+.setting-choice.selected{border-color:#7567fa;background:#f0eeff;color:#4e3bd5;box-shadow:0 0 0 3px rgba(87,69,239,.09)}
+.theme-swatch{display:inline-block;width:22px;height:22px;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+.theme-nebula{background:linear-gradient(135deg,#6254f4,#fa7297)}
+.theme-ocean{background:linear-gradient(135deg,#096d8d,#2fd9c2)}
+.theme-sunset{background:linear-gradient(135deg,#f45f71,#ffb65b)}
+.setting-row{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.setting-row strong,.setting-row small{display:block}
+.setting-row strong{font-size:12px;color:#27314e}
+.setting-row small{font-size:10px;color:#7b859d;margin-top:3px}
+.setting-toggle{border:1px solid #dce3f3;border-radius:999px;padding:8px 16px;min-width:60px;background:#fff;color:#737e99;font-size:10px;font-weight:1000}
+.setting-toggle.enabled{background:#daf9eb;color:#12764c;border-color:#a0e6c4}
+.settings-modal-footer{display:flex;justify-content:space-between;gap:10px;padding-top:18px}
+.asset-credit{font-size:9px;color:#8690a6;text-align:center;margin:15px 0 0}
+.asset-credit a{color:#5242de;text-decoration:underline}
+:root[data-theme="ocean"] body{background:radial-gradient(ellipse at 10% 4%,rgba(33,205,194,.18),transparent 30%),linear-gradient(145deg,#eafcff,#f0f6ff)}
+:root[data-theme="sunset"] body{background:radial-gradient(ellipse at 10% 4%,rgba(255,111,111,.16),transparent 30%),linear-gradient(145deg,#fff3e9,#fff1f6)}
+:root[data-theme="ocean"] .hero-card{background:linear-gradient(140deg,#078ca5,#075177 72%,#06334f)}
+:root[data-theme="sunset"] .hero-card{background:linear-gradient(140deg,#ff7188,#db4f80 70%,#8d397f)}
+:root[data-theme="ocean"] .primary-button{background:linear-gradient(135deg,#a1fff0,#42dcc7)}
+:root[data-theme="sunset"] .primary-button{background:linear-gradient(135deg,#ffe17c,#ffab59)}
+:root.reduced-motion *, :root.reduced-motion *::before,:root.reduced-motion *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
+@media(max-width:650px){
+  .settings-modal{padding:10px}
+  .settings-dialog{border-radius:21px;padding:19px}
+  .setting-choice{min-width:95px;font-size:9px}
+  .race-scene-hud{font-size:8px}
+  .race-scene-hud span{max-width:63%}
+  .block-board{gap:3px;padding:5px}
+  .stack-scene,.star-snatch-scene{padding:14px;border-radius:18px}
+  .stack-track{max-height:290px}
+}
