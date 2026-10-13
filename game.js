@@ -41,6 +41,7 @@
   let toastTimer = null;
   let audioContext = null;
   let activeBlockDrag = null;
+  let resumeAfterSettings = false;
 
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
@@ -215,12 +216,24 @@
     return '<div class="real-art real-art-' + id + '" aria-label="' + escapeText(gameById(id).title) + ' artwork">' + images + '</div>';
   }
 
-  function closeSettingsModal() {
+  function closeSettingsModal(shouldResume) {
     const modal = root.querySelector(".settings-modal");
-    if (modal) modal.remove();
+    if (modal) {
+      modal.remove();
+      if (shouldResume !== false && resumeAfterSettings) {
+        resumeAfterSettings = false;
+        if (game && currentScreen === "game" && game.isPaused) resumeGame();
+      }
+    }
   }
   function renderSettingsModal() {
-    closeSettingsModal();
+    closeSettingsModal(false);
+    if (game && currentScreen === "game" && !game.isPaused) {
+      game.isPaused = true;
+      stopTick();
+      clearRaceInput();
+      resumeAfterSettings = true;
+    }
     const themeLabels = { nebula: "NEBULA", ocean: "OCEAN", sunset: "SUNSET" };
     const accentOptions = { "#5848d8": "PURPLE", "#159da8": "TEAL", "#df4f80": "PINK", "#d68d17": "GOLD", "#3e7be8": "BLUE" };
     const difficultyLabels = { chill: "CHILL", normal: "NORMAL", chaos: "CHAOS" };
@@ -2036,14 +2049,31 @@
       tickTimer = window.setInterval(tick, 33);
     }
   });
-  if ("serviceWorker" in navigator && window.isSecureContext) {
-    window.addEventListener("load", function () {
-      navigator.serviceWorker.register("/service-worker.js", { updateViaCache: "none" }).catch(function () {
-        // The game remains playable online when service workers are unavailable.
-      });
-    });
+  function updateOfflineStatus() {
+    const pill = document.getElementById("offline-status");
+    if (!pill) return;
+    const hasServiceWorker = "serviceWorker" in navigator && window.isSecureContext;
+    const controlled = hasServiceWorker && !!navigator.serviceWorker.controller;
+    const label = !navigator.onLine ? "OFFLINE MODE" : (controlled ? "OFFLINE READY" : (hasServiceWorker ? "OFFLINE SETUP" : "LOCAL PLAY"));
+    pill.innerHTML = "<i></i>" + label;
+    pill.title = !navigator.onLine
+      ? "You are offline. Cached games and artwork remain available."
+      : (controlled ? "The game shell and previously cached artwork are available offline." : "Visit online once to prepare the offline cache.");
+    pill.classList.toggle("is-offline", !navigator.onLine);
   }
 
+  if ("serviceWorker" in navigator && window.isSecureContext) {
+    navigator.serviceWorker.addEventListener("controllerchange", updateOfflineStatus);
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/service-worker.js", { updateViaCache: "none" })
+        .then(function () { updateOfflineStatus(); })
+        .catch(function () { updateOfflineStatus(); });
+    });
+  }
+  window.addEventListener("online", updateOfflineStatus);
+  window.addEventListener("offline", updateOfflineStatus);
+
   applySettings();
+  updateOfflineStatus();
   renderHome();
 })();
