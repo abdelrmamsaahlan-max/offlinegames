@@ -82,6 +82,16 @@
   }
   function playerName(p) { return "PLAYER " + (p + 1); }
   function fmtTime(n) { return Math.max(0, n).toFixed(1) + " SEC"; }
+  function setTextIfChanged(element, value) {
+    if (!element) return;
+    const next = String(value);
+    if (element.textContent !== next) element.textContent = next;
+  }
+  function setStyleIfChanged(element, property, value) {
+    if (!element) return;
+    const next = String(value);
+    if (element.style[property] !== next) element.style[property] = next;
+  }
   function toast(message) {
     let el = document.querySelector(".toast");
     if (!el) {
