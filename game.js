@@ -1067,13 +1067,21 @@
       const cars = game.players.map(function(p, i) {
         const y = laneHeight * (i + 0.5) - 15 + p.raceSteer * 22;
         return '<g id="race-car-' + i + '" class="race-car' + (p.raceSpeed > 48 ? ' car-boost' : '') + '" transform="translate(' + (68 + p.progress) + ' ' + y + ')">' +
-          '<path class="nitro-flame" d="M0 15 L-17 9 L-10 16 L-17 23 Z" fill="#ffe16b"/><ellipse cx="28" cy="30" rx="27" ry="5" fill="#111827" opacity=".3"/>' +
-          '<rect x="3" y="8" width="51" height="19" rx="6" fill="' + colors[i] + '" stroke="#fff" stroke-width="1.5"/>' +
-          '<path d="M13 9 L20 1 H38 L46 9 Z" fill="' + colors[i] + '" stroke="#fff" stroke-width="1.5"/>' +
-          '<path d="M22 4 H35 L40 9 H18 Z" fill="#DDF7FF"/>' +
-          '<rect x="8" y="13" width="5" height="5" rx="2" fill="#fff"/><rect x="45" y="13" width="5" height="5" rx="2" fill="#fff"/>' +
-          '<g class="race-wheel"><circle cx="14" cy="27" r="6" fill="#141B2D" stroke="#D8DEEA" stroke-width="2"/><path d="M14 23V31M10 27H18" stroke="#d8deea" stroke-width="1"/></g><g class="race-wheel"><circle cx="44" cy="27" r="6" fill="#141B2D" stroke="#D8DEEA" stroke-width="2"/><path d="M44 23V31M40 27H48" stroke="#d8deea" stroke-width="1"/></g>' +
-          '<text x="28" y="22" font-size="10" text-anchor="middle" font-weight="900" fill="' + (i === 2 ? "#17233e" : "#fff") + '">' + (i + 1) + '</text></g>';
+          '<path class="nitro-flame" d="M1 16 L-18 8 L-10 16 L-18 24 Z" fill="#ffe16b"/><ellipse cx="29" cy="30" rx="29" ry="5" fill="#071021" opacity=".42"/>' +
+          '<g class="race-wheel"><rect x="10" y="3" width="13" height="7" rx="2.5" fill="#0B1220" stroke="#91A2BD" stroke-width=".7"/><path d="M13 4V9 M18 4V9" stroke="#75849F" stroke-width="1"/></g>' +
+          '<g class="race-wheel"><rect x="10" y="23" width="13" height="7" rx="2.5" fill="#0B1220" stroke="#91A2BD" stroke-width=".7"/><path d="M13 24V29 M18 24V29" stroke="#75849F" stroke-width="1"/></g>' +
+          '<g class="race-wheel"><rect x="39" y="3" width="13" height="7" rx="2.5" fill="#0B1220" stroke="#91A2BD" stroke-width=".7"/><path d="M42 4V9 M47 4V9" stroke="#75849F" stroke-width="1"/></g>' +
+          '<g class="race-wheel"><rect x="39" y="23" width="13" height="7" rx="2.5" fill="#0B1220" stroke="#91A2BD" stroke-width=".7"/><path d="M42 24V29 M47 24V29" stroke="#75849F" stroke-width="1"/></g>' +
+          '<path d="M4 13 Q4 8 11 7 L19 5 Q23 1 30 1 Q37 1 41 5 L51 8 Q56 10 57 16 L56 21 Q55 26 49 27 H11 Q4 26 3 21 Z" fill="' + colors[i] + '" stroke="#F7FBFF" stroke-width="1.35"/>' +
+          '<path d="M9 11 L17 9 L19 7 Q27 3 35 6 L42 9 L50 11" fill="none" stroke="#FFFFFF" stroke-width="1.8" opacity=".48"/>' +
+          '<path d="M18 8 Q21 3 28 3 H34 Q40 4 44 9 L40 21 H20 Z" fill="#15243F" stroke="#E7F8FF" stroke-width="1.1"/>' +
+          '<path d="M21 8 Q25 5 29 5 H33 Q37 6 40 9 L38 14 H22 Z" fill="#B8EDFF" opacity=".95"/>' +
+          '<path d="M22 16 H39 L37 21 H23 Z" fill="#293C60"/>' +
+          '<path d="M5 12 L10 11 L10 14 L5 15 Z M5 20 L10 21 L10 24 L5 23 Z" fill="#FF6A7F"/>' +
+          '<path d="M51 11 L56 13 L56 16 L51 15 Z M51 20 L56 19 L56 22 L51 23 Z" fill="#FFF4B0" stroke="#FFE27A" stroke-width=".5"/>' +
+          '<path d="M47 9 L53 9 L55 11 L49 11 Z" fill="#FFFFFF" opacity=".55"/>' +
+          '<text x="30" y="19" font-size="9" text-anchor="middle" font-weight="1000" fill="#FFFFFF" stroke="#17213B" stroke-width=".3">' + (i + 1) + '</text>' +
+          '<path d="M9 27 H18 M42 27 H50" stroke="#D7E2F6" stroke-width="1.2" opacity=".6"/></g>';
       }).join("");
       html = '<div class="race-scene"><div class="race-scene-hud"><span>🏁 FIRST TO THE LINE WINS</span><span id="race-hud-status">STEER AROUND CONES · PUSH UP TO ACCELERATE</span></div>' +
         '<svg id="race-track" class="race-track" viewBox="0 0 800 260" role="img" aria-label="Arcade race with steering, moving cars, road cones and finish line" preserveAspectRatio="none">' +
