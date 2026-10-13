@@ -867,6 +867,11 @@
         }
       }
       if (game.timeLeft <= 0) finishRound();
+    } else if (game.id === "block_battle") {
+      game.timeLeft = Math.max(0, game.timeLeft - dt);
+      const timer = document.getElementById("timer-value");
+      if (timer) timer.textContent = fmtTime(game.timeLeft);
+      if (game.timeLeft <= 0) advanceBlockTurn();
     } else if (game.id === "stack_tower") {
       game.timeLeft = Math.max(0, game.timeLeft - dt);
       const timer = document.getElementById("timer-value");
@@ -1078,35 +1083,68 @@
   }
   function updateRaceTrack() {
     if (!game || game.id !== "mini_racers") return;
-    const laneHeight = 260 / settings.players;
+    const roadLeft = 120, roadWidth = 560, laneWidth = roadWidth / settings.players;
     game.players.forEach(function (p, i) {
+      const center = roadLeft + (i + 0.5) * laneWidth;
       const car = document.getElementById("race-car-" + i);
       if (car) {
-        car.setAttribute("transform", "translate(" + (68 + p.progress) + " " + (laneHeight * (i + 0.5) - 15 + p.raceSteer * 22) + ")");
+        car.setAttribute("transform", "translate(" + (center + p.raceSteer * laneWidth * 0.34) + " 270)");
         car.classList.toggle("car-moving", p.raceSpeed > 4);
-        car.classList.toggle("car-boost", p.raceSpeed > 48 || performance.now() < p.boostFlash);
+        car.classList.toggle("car-boost", p.raceSpeed > 65 || performance.now() < p.boostFlash);
+        car.classList.toggle("car-crashed", performance.now() < p.raceCrashUntil);
       }
-      (game.raceObstacles[i] || []).forEach(function (obstacle) {
-        const hazard = document.getElementById("race-obstacle-" + i + "-" + obstacle.id);
-        if (hazard && obstacle.passed) hazard.classList.add("is-passed");
-      });
     });
+    (game.raceTraffic || []).forEach(function (trafficCar) {
+      const lane = game.players[trafficCar.lane] ? trafficCar.lane : 0;
+      const cx = roadLeft + (lane + 0.5) * laneWidth + trafficCar.offset * laneWidth * 0.34;
+      const el = document.getElementById("traffic-car-" + trafficCar.id);
+      if (el) {
+        el.setAttribute("transform", "translate(" + cx + " " + trafficCar.y + ")");
+        el.classList.toggle("traffic-resolved", !!trafficCar.resolved);
+      }
+    });
+    const roadMarks = document.getElementById("road-dash-marks");
+    if (roadMarks) roadMarks.setAttribute("transform", "translate(0 " + game.roadScroll + ")");
     const hud = document.getElementById("race-hud-status");
     if (hud) {
-      const leader = game.players.reduce(function(best, p, i, arr) { return p.progress > arr[best].progress ? i : best; }, 0);
-      hud.textContent = "P" + (leader + 1) + " LEADS · " + Math.round(game.players[leader].progress) + " m · " + game.players[leader].cleanPasses + " CLEAN PASSES";
+      const leader = game.players.reduce(function (best, p, i, arr) {
+        const bestValue = arr[best].progress + arr[best].cleanPasses * 22 - arr[best].misses * 18;
+        const value = p.progress + p.cleanPasses * 22 - p.misses * 18;
+        return value > bestValue ? i : best;
+      }, 0);
+      hud.textContent = "P" + (leader + 1) + " LEADS · " + Math.round(game.players[leader].progress) + " M";
     }
+    const level = document.getElementById("race-level");
+    if (level) {
+      const names = ["EASY TRAFFIC", "TRAFFIC PICKING UP", "BUSY ROAD", "HEAVY TRAFFIC", "MAX RUSH", "FINAL RUSH"];
+      level.textContent = "LEVEL " + (game.raceDifficulty + 1) + " · " + (names[Math.min(names.length - 1, game.raceDifficulty)] || "MAX RUSH");
+    }
+    const clean = document.getElementById("race-clean-passes");
+    if (clean) clean.textContent = game.players.reduce(function (sum, p) { return sum + p.cleanPasses; }, 0) + " CLEAN PASSES";
   }
-
-  function updateTargetDisplay() {
-    const display = document.getElementById("target-display");
-    const label = document.getElementById("target-label");
-    if (display) {
-      display.style.background = colors[game.target];
-      display.style.color = game.target === 2 ? "#17233e" : "#fff";
-      display.textContent = ["R", "B", "Y", "G"][game.target];
+  function updateStackTower() {
+    if (!game || game.id !== "stack_tower") return;
+    const block = document.getElementById("stack-moving-block");
+    if (block) {
+      block.setAttribute("x", String(game.stackX));
+      block.setAttribute("width", String(game.players[game.activeStackPlayer].stackWidth));
     }
-    if (label) label.textContent = ["RED", "BLUE", "YELLOW", "GREEN"][game.target];
+    const level = document.getElementById("stack-height-live");
+    if (level) level.textContent = "LAYER " + game.players[game.activeStackPlayer].stackHeight + " / 8";
+  }
+  function advanceStackTurn() {
+    if (!game || game.id !== "stack_tower" || currentScreen !== "game") return;
+    const current = game.players[game.activeStackPlayer];
+    if (current.stackAlive && current.stackHeight < 8) current.status = "TIME UP · " + current.stackHeight + " LAYERS";
+    game.activeStackPlayer++;
+    if (game.activeStackPlayer >= game.players.length) { finishRound(); return; }
+    const player = game.players[game.activeStackPlayer];
+    game.timeLeft = game.duration;
+    game.stackDirection = Math.random() < 0.5 ? 1 : -1;
+    game.stackX = game.stackDirection > 0 ? 32 : Math.max(32, 728 - player.stackWidth);
+    game.stackSpeed = 235 + player.stackHeight * 20;
+    player.status = "YOUR TURN · DROP AT THE RIGHT MOMENT";
+    renderGame();
   }
   function resultScores() {
     return game.players.map(function (p) {
