@@ -871,3 +871,21 @@ button{-webkit-user-select:none;user-select:none}
 .offline-pill.is-setup i{background:#e7a52d;box-shadow:0 0 0 4px rgba(231,165,45,.14)}
 .offline-pill.is-offline{background:color-mix(in srgb,#f06a78 11%,var(--surface));border-color:color-mix(in srgb,#f06a78 37%,var(--surface-edge));color:var(--ink)}
 .offline-pill.is-offline i{background:#f06a78;box-shadow:0 0 0 4px rgba(240,106,120,.14)}
+
+
+/* Performance pass: avoid SVG filter recomposition on every moving-race frame. */
+.race-track{filter:none!important;box-shadow:0 8px 18px rgba(0,0,0,.22)}
+.traffic-car{filter:none!important}
+.race-car.car-boost{filter:none!important}
+.race-speed-trail{filter:none!important}
+@media(hover:none),(pointer:coarse){
+  .game-card:hover{transform:none}
+  .game-card:hover .game-art svg{transform:none;filter:none}
+  .game-card-shell .game-card{transition:none}
+  .favorite-toggle:hover{transform:none}
+}
+@media(max-width:760px){
+  .race-track{box-shadow:none}
+  .race-scene{box-shadow:none}
+  .race-speed-trail{opacity:.48}
+}
