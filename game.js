@@ -1089,7 +1089,7 @@
       const overlap = right - left;
       if (overlap < 22) {
         p.stackAlive = false;
-        p.stackScore = p.stackHeight * 10;
+        p.stackScore = Math.max(p.stackScore, p.stackHeight * 10);
         p.status = "TOWER COLLAPSED · " + p.stackHeight + " LAYERS";
         sfx("bump");
         refreshPlayerPanels();
