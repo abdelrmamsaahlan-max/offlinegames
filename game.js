@@ -3,8 +3,8 @@
 
   const root = document.getElementById("app-root");
   const STORAGE_KEY = "pocketParty.web.v1";
-  const colors = ["#2eb8e8", "#ff6c84", "#f6ca3f", "#47c995"];
-  const softColors = ["#e1f7fe", "#ffebef", "#fff7d7", "#e2f8ee"];
+  const colors = ["#ff5d7d", "#37d9f2", "#ffc857", "#40e0a0"];
+  const softColors = ["#ffebf0", "#e3fbff", "#fff6dc", "#e4fff4"];
   const ink = "#17233e";
   const purple = "#5848d8";
   const gameList = [
@@ -327,7 +327,10 @@
     if (!piece || piece.used) return;
     orientBlockPiece(piece, 1);
     const move = findBestBlockMove(player, game.selectedPiece);
-    if (move) player.blockCursor = { row: move.row, col: move.col };
+    if (move) {
+      orientBlockPiece(piece, move.rotation);
+      player.blockCursor = { row: move.row, col: move.col };
+    }
     sfx("rotate");
     renderGame();
   }
@@ -624,7 +627,7 @@
     stopTick();
     lastTick = performance.now();
     tickTimer = window.setInterval(tick, 80);
-    if (id === "reflex_rush" || id === "dodge_arena") beep(320, 0.07, "triangle");
+    if (id === "reflex_rush" || id === "dodge_arena" || id === "mini_racers") sfx("select");
   }
 
   let tickTimer = null;
@@ -1056,7 +1059,8 @@
         if (cursor.row === row && cursor.col === col) classes.push("cursor-anchor");
         if (placed.has(index) && value !== null) classes.push("place-pop");
         if (cleared.has(index) && value === null) classes.push("line-flash");
-        const bgStyle = value === null ? "" : ' style="--block-color:' + colors[value] + '"';
+        const ghostColor = value !== null ? colors[value] : (ghostCells.has(index) && activePiece ? colors[activePiece.colorIndex] : "");
+        const bgStyle = ghostColor ? ' style="--block-color:' + ghostColor + '"' : "";
         return '<button class="' + classes.join(" ") + '"' + bgStyle + ' data-action="block-place" data-row="' + row + '" data-col="' + col + '" aria-label="Row ' + (row + 1) + ', column ' + (col + 1) + '"></button>';
       }).join("");
       player.lastPlaced = [];
@@ -1105,7 +1109,7 @@
               '<div class="panel-controls dual-controls"><div class="color-actions">' + colors.map(function (c, ci) { return '<button class="color-button" data-action="color" data-player="' + i + '" data-color="' + ci + '" style="background:' + c + ';color:' + (ci === 2 ? ink : "#fff") + '" ' + (disabledMemory ? "disabled" : "") + '>' + ["R","B","Y","G"][ci] + '</button>'; }).join("") + '</div><button class="joystick-control party-joystick color-stick" data-action="joystick" data-player="' + i + '" aria-label="Choose a color with the joystick for ' + playerName(i) + '"' + (disabledMemory ? " disabled" : "") + '><span class="joystick-ring"></span><span class="joystick-knob"></span><span class="joystick-hint">AIM</span></button></div>' :
               '<div class="panel-controls universal-controls"><button class="action-button ' + (i === 2 ? "soft-text" : "") + '" data-action="player" data-player="' + i + '">' + (game.id === "tap_sprint" ? "TAP FAST!" : game.id === "mini_racers" ? "NITRO BOOST" : game.id === "dodge_arena" ? "DODGE NOW!" : "TAP ON GO!") + '</button><button class="joystick-control party-joystick" data-action="joystick" data-player="' + i + '" aria-label="Use joystick for ' + playerName(i) + '"><span class="joystick-ring"></span><span class="joystick-knob"></span><span class="joystick-hint">' + (game.id === "mini_racers" ? "DRIVE" : game.id === "tap_sprint" ? "TAP" : game.id === "dodge_arena" ? "DODGE" : "REACT") + '</span></button></div>'))) +
         '</section>';
-      }).join("") + '</div><div class="game-tip">' + (game.id === "memory_grid" ? "Pass the phone: each player gets a turn to repeat the sequence." : (game.id === "mini_racers" ? "HOLD your lane button to accelerate. Tap for a nitro boost. First across the finish line wins!" : (game.id === "block_battle" ? "Take turns with your own puzzle board. Clear complete rows and columns to earn bonus points." : (game.id === "orb_dash" ? "Drag your player joystick to move in any direction. Collect ✦ gems for 10 points each." : "Everybody plays on one screen. Tap only your own player panel.")))) + '</div></div></div>';
+      }).join("") + '</div><div class="game-tip">' + (game.id === "memory_grid" ? "Pass the phone: each player gets a turn to repeat the sequence." : (game.id === "mini_racers" ? "Push UP to accelerate, steer left or right around cones, and tap NITRO BOOST for a burst. First across the finish line wins!" : (game.id === "block_battle" ? "Take turns with your own puzzle board. Clear complete rows and columns to earn bonus points." : (game.id === "orb_dash" ? "Drag your player joystick to move in any direction. Collect ✦ gems for 10 points each." : "Everybody plays on one screen. Tap only your own player panel.")))) + '</div></div></div>';
     if (game.id === "reflex_rush" && game.phase === "reflex_go") {
       game.startedGoAt = performance.now();
     }
