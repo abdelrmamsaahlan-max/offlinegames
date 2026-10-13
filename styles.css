@@ -395,3 +395,32 @@ button{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease,bord
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
 }
+
+
+/* Distinct visual identities for each round, built from original CSS/vector effects. */
+.shell,.result-wrap,.game-select-wrap{animation:arcade-in .36s cubic-bezier(.2,.8,.2,1) both}
+.game-card:nth-child(2){animation-delay:.025s}.game-card:nth-child(3){animation-delay:.05s}.game-card:nth-child(4){animation-delay:.075s}
+.game-card:nth-child(5){animation-delay:.1s}.game-card:nth-child(6){animation-delay:.125s}.game-card:nth-child(7){animation-delay:.15s}.game-card:nth-child(8){animation-delay:.175s}
+.arena.tap-arena{background:radial-gradient(ellipse at 50% 7%,#fff 0,#e8e4ff 45%,#d4d2ff 100%);border-color:#d4caff}
+.tap-arena .arena-symbols{color:#5540e4;letter-spacing:11px;font-size:clamp(24px,4vw,42px);text-shadow:0 5px 0 #c4bcff,0 14px 24px rgba(77,57,205,.2)}
+.tap-arena .arena-big{color:#3926ba;font-variant-numeric:tabular-nums}
+.tap-arena .arena-big:after{content:"";display:block;width:90px;height:5px;margin:10px auto 0;border-radius:9px;background:linear-gradient(90deg,#ff5d7d,#ffc857,#40e0a0,#37d9f2);box-shadow:0 0 18px rgba(87,69,239,.24)}
+.arena.reflex-arena{background:radial-gradient(ellipse at 50% 35%,#243967 0,#151d38 54%,#0b1226 100%);border:1px solid #2c3f6d;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.reflex-arena .arena-center h2,.reflex-arena .arena-center p{color:#dbe7ff}
+.reflex-arena .arena-big{font-size:clamp(42px,7vw,74px);letter-spacing:4px;color:#ff7188;text-shadow:0 0 20px rgba(255,93,125,.3)}
+.reflex-arena:before{content:"";position:absolute;left:50%;top:50%;width:270px;height:270px;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(125,158,255,.18);box-shadow:0 0 0 32px rgba(125,158,255,.045),0 0 0 65px rgba(125,158,255,.025);pointer-events:none}
+.reflex-arena .arena-tile{border-radius:9px;filter:saturate(.88)}
+.arena.memory-arena{background:radial-gradient(ellipse at 50% 0,#f1eaff 0,#e2ddff 47%,#cdd4ff 100%);border:1px solid #d5cafa}
+.memory-arena .arena-tile{border-radius:17px;aspect-ratio:1;max-width:98px;box-shadow:inset 0 2px 0 rgba(255,255,255,.42),0 7px 0 rgba(34,35,91,.13),0 13px 21px rgba(49,46,120,.13)}
+.memory-arena .arena-tile.lit{outline:3px solid #fff;outline-offset:3px;filter:brightness(1.2);box-shadow:0 0 0 8px rgba(255,255,255,.22),0 0 32px rgba(255,255,255,.76);transform:scale(1.08)}
+.memory-arena .arena-big{color:#4c37cd}
+.arena.dodge-arena{background:radial-gradient(circle at 50% 50%,#fff8e8 0,#fff0ca 47%,#ffe2ab 100%);border:1px solid #ffdf9c}
+.dodge-arena .arena-symbols{font-size:clamp(26px,4.7vw,46px);letter-spacing:8px;color:#ce861d;text-shadow:0 3px 0 #ffcf74,0 10px 22px rgba(189,118,15,.18)}
+.dodge-arena .arena-big{color:#a86208}
+.dodge-arena .arena-tile{border-radius:50%;background:linear-gradient(145deg,#ffdb79,#ff9e51);box-shadow:0 0 0 10px rgba(255,174,81,.16),0 10px 20px rgba(166,98,8,.14)}
+.arena.target-arena{background:radial-gradient(ellipse at 50% 0,#fff 0,#fff0f5 50%,#f9dce9 100%);border:1px solid #f5c5dc}
+.target-arena .arena-big{color:#b12b79}
+.target-arena .arena-tile{box-shadow:0 7px 0 rgba(39,30,70,.14),0 13px 22px rgba(135,36,95,.16);border:3px solid #fff}
+.target-arena #target-display{border-radius:20px;box-shadow:0 0 0 8px rgba(255,255,255,.48),0 0 32px color-mix(in srgb,var(--arena-dot),transparent 42%),0 9px 0 rgba(39,30,70,.12);animation:target-pulse 1s ease-in-out infinite alternate}
+@keyframes target-pulse{from{transform:scale(.96);filter:saturate(.9)}to{transform:scale(1.055);filter:saturate(1.18)}}
+@media(prefers-reduced-motion:reduce){.game-card:nth-child(n){animation-delay:0s}}
