@@ -34,7 +34,7 @@
   ];
   let settings = { players: 2, rounds: 5, sound: true, theme: "nebula", difficulty: "normal", motion: true, appearance: "light", accent: "#5848d8" };
   let libraryQuery = "", activeCategory = "ALL", librarySort = "featured";
-  let favoriteIds = [], recentGames = [];
+  let favoriteIds = [], recentGames = [], highScores = {};
   let currentScreen = "home";
   let game = null;
   let tournament = null;
@@ -55,6 +55,8 @@
     const librarySaved = JSON.parse(localStorage.getItem("pocketParty.library.v1") || "{}");
     favoriteIds = Array.isArray(librarySaved.favorites) ? librarySaved.favorites : [];
     recentGames = Array.isArray(librarySaved.recent) ? librarySaved.recent : [];
+    const scoresSaved = JSON.parse(localStorage.getItem("pocketParty.highscores.v1") || "{}");
+    highScores = scoresSaved && typeof scoresSaved === "object" ? scoresSaved : {};
   } catch (e) {}
 
   function applySettings() {
@@ -750,6 +752,7 @@
   }
   function startGame(id, inTournament) {
     const g = gameById(id);
+    trackPlayedGame(id);
     const durations = { tap_sprint: 10, mini_racers: 30, target_rush: 12, block_battle: 35, orb_dash: 30, star_snatch: 15, stack_tower: 8 };
     const duration = durations[id] || 0;
     const effectivePlayers = (id === "tic_tac_toe" || id === "connect_four") ? 2 : settings.players;
@@ -1332,6 +1335,13 @@
     stopTick();
     joystickPointerOwners.clear(); racePointerOwners.clear();
     const scores = resultScores();
+    const previousBest = Number(highScores[game.id] || 0);
+    const bestThisRound = Math.max(0, ...scores);
+    game.newHighScore = bestThisRound > previousBest;
+    if (game.newHighScore) {
+      highScores[game.id] = bestThisRound;
+      try { localStorage.setItem("pocketParty.highscores.v1", JSON.stringify(highScores)); } catch (e) {}
+    }
     game.players.forEach(function (p, i) { p.score = scores[i]; });
     const ranks = rankPlayers(scores);
     const points = game.players.map(function (p, i) {
@@ -1624,9 +1634,10 @@
     if (!game) { renderHome(); return; }
     const g = game.data;
     const isTimed = game.timeLeft !== null;
+    const bestScore = Number(highScores[game.id] || 0);
     const tournamentRibbon = game.tournament && tournament ? '<div class="tournament-ribbon"><span class="tournament-ribbon-label">TOURNAMENT · ROUND ' + game.round + ' / ' + tournament.rounds + '</span>' + game.players.map(function (p, i) { return '<span class="tournament-ribbon-score" style="--ribbon-color:' + colors[i] + '">P' + (i + 1) + ' <b>' + tournament.scores[i] + '</b></span>'; }).join('') + '</div>' : '';
     root.innerHTML = '<div class="game-shell">' +
-      '<div class="game-top"><button class="back-button" data-action="game-menu">← GAMES</button><div class="game-heading"><h1>' + g.title + '</h1><p>' + (game.tournament ? "TOURNAMENT · ROUND " + game.round + " / " + tournament.rounds : "QUICK PLAY · " + g.category) + '</p></div><div class="game-top-right">' + (isTimed ? '<span class="timer-chip" id="timer-value">' + fmtTime(game.timeLeft) + '</span>' : '<button class="sound-chip" data-action="sound">♫ SOUND</button>') + '</div></div>' +
+      '<div class="game-top"><button class="back-button" data-action="game-menu">← GAMES</button><div class="game-heading"><h1>' + g.title + '</h1><p>' + (game.tournament ? "TOURNAMENT · ROUND " + game.round + " / " + tournament.rounds : "QUICK PLAY · " + g.category) + '</p></div><div class="game-top-right"><span class="personal-best">BEST ' + bestScore + '</span>' + (isTimed ? '<span class="timer-chip" id="timer-value">' + fmtTime(game.timeLeft) + '</span>' : '<button class="sound-chip" data-action="sound">♫ SOUND</button>') + '</div></div>' +
       tournamentRibbon +
       '<div class="game-board">' + renderArenaContent() +
       '<div class="player-grid ' + (game.id === "block_battle" ? "block-score-panels" : (game.id === "orb_dash" ? "orb-player-panels" : "")) + '">' + game.players.map(function (p, i) {
@@ -1660,7 +1671,7 @@
     const ranks = game.ranks || rankPlayers(game.resultScores || []);
     const finalRound = game.tournament && tournament && tournament.round >= tournament.rounds;
     root.innerHTML = '<div class="result-wrap"><div class="result-card">' +
-      '<div class="result-banner"><div class="mini-eyebrow">✦ ROUND COMPLETE ✦</div><h1>' + (game.tournament ? "POINTS ON THE BOARD" : "THAT WAS A CLOSE ONE") + '</h1><p>' + game.data.title + (game.tournament ? " · Round " + tournament.round + " of " + tournament.rounds : " · Quick play") + '</p></div>' +
+      '<div class="result-banner"><div class="mini-eyebrow">✦ ' + (game.newHighScore ? "NEW PERSONAL BEST" : "ROUND COMPLETE") + ' ✦</div><h1>' + (game.tournament ? "POINTS ON THE BOARD" : "THAT WAS A CLOSE ONE") + '</h1><p>' + game.data.title + (game.tournament ? " · Round " + tournament.round + " of " + tournament.rounds : " · Quick play") + '</p></div>' +
       ranks.map(function (row, rank) {
         const p = game.players[row.index];
         return '<div class="result-row" style="--player-color:' + colors[row.index] + ';--player-soft:' + softColors[row.index] + '"><div class="rank-pill">' + (rank + 1) + '</div><div><div class="result-player">' + playerName(row.index) + '</div><div class="result-detail">' + escapeText(scoreText(p, game.id)) + '</div></div><div class="result-score">' + (Number.isFinite(row.score) ? Math.round(row.score) : "—") + '</div>' + (game.tournament ? '<div class="points-badge">+' + game.points[row.index] + ' PTS</div>' : '') + '</div>';
