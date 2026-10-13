@@ -29,19 +29,19 @@ Player-count indicators are shown on library cards. The two board games use exac
 
 ## Website features
 
-The browser library supports title/description search, category filters, sorting, favorites, recently played games, a sound toggle, and per-game high scores. Settings save in browser local storage and include light/dark appearance, three background themes, accent color, game difficulty, sound effects, and reduced-motion mode.
+The browser library supports title/description search, category filters, sorting, favorites, recently played games, a sound toggle, and per-game high scores. Settings save in browser local storage and include light/dark appearance, three background themes, accent color, game difficulty, sound effects, and reduced-motion mode. Active rounds can be paused, resumed, restarted, or exited. Opening settings during a round pauses the game; Escape closes the settings modal or toggles the pause screen. Mini Racers keyboard steering handles simultaneous key presses and clears held inputs when the tab loses focus.
 
 The global joystick is deliberately **not** used across every game. In this collection, sticks are shown only for Mini Racers and Orb Dash. Puzzle games use board interactions; memory/color games use color buttons; timing and survival games use action buttons.
 
 ## Art and licensing
 
-The browser library uses **Kenney CC0 game sprites** for racing cars, glossy puzzle tiles, stars, and a crate. Assets are referenced from Kenney's public raw asset repository rather than presented as commercial-game screenshots. Sources include [Kenney Racing Pack](https://kenney.nl/assets/racing-pack) and [Kenney CC0 game assets repository](https://github.com/shorepine/kenney). These images load from external URLs, so the website's first-time artwork load requires an internet connection even though mini-game rules run in the browser.
+The browser library uses **Kenney CC0 game sprites** for racing cars, glossy puzzle tiles, stars, and a crate. Assets are referenced from Kenney's public raw asset repository rather than presented as commercial-game screenshots. Sources include [Kenney Racing Pack](https://kenney.nl/assets/racing-pack) and [Kenney CC0 game assets repository](https://github.com/shorepine/kenney). These images load from external URLs. The service worker pre-caches the core app shell and selected key sprites, then saves additional images as they are requested. Visit the site online once and let the offline cache finish preparing before relying on a no-connection session; uncached external images cannot be fetched while offline.
 
 The game implementations and Pocket Party presentation are original; the reference *1 2 3 4 Player Games – Offline* app is an inspiration for local-multiplayer variety, not a source of copied code, branding, or artwork.
 
 ## Validation completed
 
-The latest browser JavaScript passed a syntax parse check. A deterministic JavaScript/DOM test harness checked all 12 game screens, confirmed joystick controls appear only for Mini Racers and Orb Dash, verified settings can open and persist dark appearance, and tested:
+The browser JavaScript and service-worker source pass syntax parsing, and the stylesheet passes a structural brace-balance check. A deterministic JavaScript/DOM test harness from the previous gameplay pass checked all 12 game screens, confirmed joystick controls appear only for Mini Racers and Orb Dash, verified settings can open and persist dark appearance, and tested:
 - Block Battle simultaneous row/column clearing and scoring, plus 30 consecutive legal Smart Move placements.
 - Tic-Tac-Toe and Connect Four win detection and results screens.
 - Solo AI replies for Tic-Tac-Toe and Connect Four.
@@ -49,7 +49,7 @@ The latest browser JavaScript passed a syntax parse check. A deterministic JavaS
 - Traffic spawning, 5-second difficulty escalation, road movement, and crash penalty.
 - Saved high scores for a completed board-game round.
 
-These tests use a mocked browser environment. They do **not** replace manual desktop/mobile browser QA, cross-browser checks, keyboard/touch device tests, or a production browser-console audit. Keep unverified cases marked as needing QA rather than treating the test harness as a guarantee of zero bugs.
+These gameplay tests use a mocked browser environment. The recent pause/resume flow and service-worker offline path have only had source/syntax and structural checks in this pass, not full real-browser offline/device testing. This does **not** replace manual desktop/mobile browser QA, cross-browser checks, keyboard/touch device tests, or a production browser-console audit. Keep unverified cases marked as needing QA rather than treating static checks as a guarantee of zero bugs.
 
 ## Native Godot project — separate status
 
@@ -65,6 +65,7 @@ For store release, still set the final package/app ID, export presets and signin
 - Orb Dash: steer continuously toward the gold collectible.
 - Block Battle: choose a shape then tap a valid grid cell or drag it to the board; rotate, use Smart Move, or place the highlighted position. A full row or column clears, and simultaneous clears are scored.
 - Tic-Tac-Toe / Connect Four: tap the board or a Connect Four column; the game ends on a win or draw.
+- Press the pause icon or Escape during a game to pause; resume, restart, or return to the library. Opening settings during an active round pauses its timer.
 - Use the settings gear for saved preferences and the sound toggle to mute/unmute synthesized effects. Use GAMES to leave a round, or the results screen to rematch.
 
 ## Important limitations
