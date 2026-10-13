@@ -201,6 +201,10 @@
         sprite(puzzleAsset("element_blue_square_glossy.png"), "sprite-orb orb-blue", "Kenney CC0 blue tile");
     } else if (id === "reflex_rush") {
       images = tiles("reflex-sprite", 3) + '<span class="asset-badge">READY?</span>';
+    } else if (id === "tic_tac_toe") {
+      images = '<span class="ttt-card-x">X</span><span class="ttt-card-o">O</span><span class="asset-badge">THREE IN A ROW</span>';
+    } else if (id === "connect_four") {
+      images = '<span class="connect-card-disc red"></span><span class="connect-card-disc yellow"></span><span class="asset-badge">CONNECT FOUR</span>';
     } else if (id === "tap_sprint") {
       images = tiles("tap-sprite") + '<span class="asset-badge">TAP FAST</span>';
     }
@@ -1219,7 +1223,9 @@
     renderGame();
   }
   function resultScores() {
-    return game.players.map(function (p) {
+    return game.players.map(function (p, i) {
+      if (game.id === "tic_tac_toe") return game.tttWinner === "DRAW" ? 1 : (game.tttWinner === (i === 0 ? "X" : "O") ? 10 : 0);
+      if (game.id === "connect_four") return game.connectWinner === "DRAW" ? 1 : (game.connectWinner === i ? 10 : 0);
       if (game.id === "tap_sprint") return p.taps + p.comboBonus;
       if (game.id === "reflex_rush") return p.reaction === null ? -2000 : (p.reaction < 0 ? -1000 : 10000 - p.reaction);
       if (game.id === "memory_grid") return p.memoryScore;
@@ -1235,6 +1241,8 @@
   }
 
   function scoreText(p, id) {
+    if (id === "tic_tac_toe") return game.tttWinner === "DRAW" ? "Draw game" : (game.tttWinner === (game.players.indexOf(p) === 0 ? "X" : "O") ? "Winner" : "Defeated");
+    if (id === "connect_four") return game.connectWinner === "DRAW" ? "Draw game" : (game.connectWinner === game.players.indexOf(p) ? "Winner · four connected" : "Defeated");
     if (id === "tap_sprint") return p.taps + " taps · " + p.comboBonus + " combo bonus";
     if (id === "reflex_rush") return p.reaction === null ? "Too slow" : (p.reaction < 0 ? "False start" : p.reaction + " ms");
     if (id === "memory_grid") return p.memoryScore + " / " + (game ? game.sequence.length : 5) + " remembered";
@@ -1248,6 +1256,8 @@
   }
 
   function miniScore(p, id) {
+    if (id === "tic_tac_toe") return game.tttWinner === "DRAW" ? "draw" : (game.tttWinner === (game.players.indexOf(p) === 0 ? "X" : "O") ? "won" : "lost");
+    if (id === "connect_four") return game.connectWinner === "DRAW" ? "draw" : (game.connectWinner === game.players.indexOf(p) ? "won" : "lost");
     if (id === "tap_sprint") return p.taps + " taps · " + p.comboBonus + " bonus";
     if (id === "mini_racers") return Math.round(p.progress) + " m · " + p.cleanPasses + " passes · " + p.misses + " crashes";
     if (id === "block_battle") return p.blockScore + " points · " + p.blockLines + " lines";
@@ -1333,10 +1343,11 @@
     finishRound();
     return true;
   }
-  function makeTicMove(index, symbol) {
+  function makeTicMove(index, symbol, fromAI) {
     if (!game || game.id !== "tic_tac_toe" || currentScreen !== "game" || game.tttOver ||
         !Number.isInteger(index) || index < 0 || index > 8 || game.tttBoard[index] !== null) return;
     if (symbol !== "X" && symbol !== "O") return;
+    if (game.aiOpponent && game.tttTurn === 1 && !fromAI) return;
     game.tttBoard[index] = symbol;
     sfx("place");
     if (endTicRound()) return;
@@ -1349,7 +1360,7 @@
       window.setTimeout(function () {
         if (game !== activeGame || currentScreen !== "game" || game.id !== "tic_tac_toe" || game.tttOver) return;
         const move = bestTicMove(game.tttBoard);
-        if (move >= 0) makeTicMove(move, "O");
+        if (move >= 0) makeTicMove(move, "O", true);
       }, 180);
     }
   }
@@ -1386,11 +1397,11 @@
     const open = preference.filter(function (col) { return board[col] === null; });
     return open.length ? open[Math.floor(Math.random() * Math.min(3, open.length))] : -1;
   }
-  function makeConnectDrop(col) {
+  function makeConnectDrop(col, fromAI) {
     if (!game || game.id !== "connect_four" || currentScreen !== "game" || game.connectOver ||
         !Number.isInteger(col) || col < 0 || col > 6) return;
     const disc = game.connectTurn;
-    if (game.aiOpponent && disc === 1) return;
+    if (game.aiOpponent && disc === 1 && !fromAI) return;
     let row = 5;
     while (row >= 0 && game.connectBoard[row * 7 + col] !== null) row--;
     if (row < 0) { sfx("error"); return; }
@@ -1418,7 +1429,7 @@
       const activeGame = game;
       window.setTimeout(function () {
         if (game !== activeGame || currentScreen !== "game" || game.id !== "connect_four" || game.connectOver) return;
-        makeConnectDrop(chooseConnectColumn(game.connectBoard));
+        makeConnectDrop(chooseConnectColumn(game.connectBoard), true);
       }, 200);
     }
   }
@@ -1631,6 +1642,8 @@
     else if (action === "players") { settings.players = Number(el.dataset.value); saveSettings(); sfx("select"); renderHome(); }
     else if (action === "rounds") { settings.rounds = Number(el.dataset.value); saveSettings(); renderHome(); }
     else if (action === "play") renderGameSelect();
+    else if (action === "board-move") makeTicMove(Number(el.dataset.index), game && game.tttTurn === 1 ? "O" : "X", false);
+    else if (action === "connect-drop") makeConnectDrop(Number(el.dataset.col), false);
     else if (action === "block-piece") {
       if (game && game.id === "block_battle") {
         game.selectedPiece = Number(el.dataset.piece);
