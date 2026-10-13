@@ -1,64 +1,72 @@
-# Pocket Party — Godot Mobile Game
+# Pocket Party — Browser Arcade + Godot Project
 
-An offline-first, same-device 1–4 player mini-game collection prototype built with Godot 4.
+Pocket Party is a local multiplayer mini-game collection. The repository contains both a browser build and a native Godot project. **The newest 12-game collection and website settings described below are currently implemented in the browser files** (index.html, game.js, and styles.css); they have not all been ported to Godot yet.
 
-## Native mobile app (primary target)
+## Play the browser version
 
-**Pocket Party is intended to be a real Godot mobile app for Google Play and the Apple App Store.** The browser build in `index.html`, `game.js`, and `styles.css` is only an optional preview; it is not the store app.
+**Live preview:** https://offlinegames-eight.vercel.app
 
-- **Godot project:** open `project.godot` in the Godot 4 editor. The native game's scene is `main.tscn` and its gameplay/UI code is `scripts/main.gd`.
-- **Android / Google Play:** install Godot export templates, OpenJDK 17, and the Android SDK; configure the Java and Android SDK paths in Godot; create an Android export preset and test on a device. Google Play releases should be exported as a signed Android App Bundle (`.aab`). [Official Android export guide](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_android.html).
-- **iOS / App Store:** exporting and signing the iOS app requires macOS with Xcode. Godot exports an Xcode project, which is then built and signed for an iPhone/App Store release. [Official iOS export guide](https://docs.godotengine.org/en/latest/tutorials/export/exporting_for_ios.html).
-- **Release setup still needed:** final app ID/package name, store-ready launcher icons, export presets and signing, privacy/store listing details, and device testing. Do not publish the prototype until these are checked.
+The main branch is connected to Vercel. After a successful GitHub commit, the website deploys from that branch; verify the latest deployment before sharing changes as live.
 
-## Browser preview (for testing only)
+## Browser game library (12 games)
 
-[**Open the Pocket Party browser preview**](https://offlinegames-eight.vercel.app).
+| Game | What is playable | Controls |
+| --- | --- | --- |
+| Tap Sprint | Timed tapping, combo bonus, score/results | Player action button |
+| Reflex Rush | Random GO signal, reaction timing, false-start penalty | Player action button |
+| Memory Grid | Sequence playback and turn-based pattern recall | Four color buttons |
+| Mini Racers | Scrolling road, moving traffic, steering, crashes, clean-pass bonus; traffic increases every 5 seconds | On-screen directional stick; Arrow/WASD on desktop; Nitro action button |
+| Dodge Arena | Eight signal-based dodge waves | Player action button |
+| Target Rush | Timed color matching, speed increases through the round | Four color buttons |
+| Block Battle | 8×8 polyomino puzzle, legal piece racks, rotation, placement preview, Smart Move, simultaneous row/column clears, bonus scoring | Select a piece, tap a board cell or drag-and-drop; rotate/hint/place tools |
+| Orb Dash | Continuous gem collection; each gem is worth 10 points | On-screen directional stick |
+| Star Snatch | Hit a moving star when it crosses the target zone; speed changes every 5 seconds | Player action button |
+| Stack Tower | Turn-based moving blocks, trimmed overlap, perfect-drop bonuses and collapse | Drop action button |
+| Tic-Tac-Toe | 3×3 line detection, draw detection, local two-player or minimax AI when set to one player | Tap an empty cell |
+| Connect Four | 7×6 board, gravity-based column drops, 4-in-a-row win checks, local two-player or AI reply when set to one player | Tap a column |
 
-The browser preview uses `index.html`, `game.js`, and `styles.css`. It is useful for testing the UI and gameplay, but it is separate from the native Godot app and is not the Google Play / App Store build. Changes pushed to the repository's `main` branch trigger a Vercel deployment. If Vercel requests sign-in, open the preview while signed in to the account with project access.
+Player-count indicators are shown on library cards. The two board games use exactly two board sides; choosing one player enables an AI opponent, while a two-player setup enables local versus play. Most other party rounds accept the selected 1–4 players.
 
-## Open locally
-1. Download this repository using **Code → Download ZIP**, or clone it.
-2. Install the standard Godot 4.x editor from https://godotengine.org/download/.
-3. In Godot Project Manager, click **Import** and select `project.godot`.
-4. Press **F6** to run the main scene or **F5** to run the project.
+## Website features
 
-## Current prototype
-- Separate party setup home screen and mini-game selection menu.
-- Eight original mini-games: Tap Sprint, Reflex Rush, Memory Grid, Mini Racers, Dodge Arena, Target Rush, Block Battle, and Orb Dash.
-- Tap Sprint rewards every five taps with combo bonuses.
-- Reflex Rush measures reaction time and penalizes false starts.
-- Memory Grid reveals its pattern one color at a time, with a longer sequence for three or four players.
-- Mini Racers is a neon-styled arcade race with animated cars and wheels, joystick steering, nitro bursts, road cones, collision slowdown, clean-pass speed bonuses, and a finish line.
-- Block Battle is a turn-based 8×8 block puzzle with varied polyomino shapes, rotation, board-aware legal shape racks, a live placement ghost, Smart Move suggestions, row/column clears, streak bonuses, and animated placement/clear feedback.
-- Orb Dash is a continuous joystick-controlled gem collection race, with 10 points per gem. The browser build provides a direction-stick on every game panel; direction maps to actions in timing games, colors in color games, steering/throttle in racing, and cursor/placement in Block Battle.
-- Target Rush speeds up as the round progresses; Dodge Arena gradually shortens each dodge window.
-- 1–4 player selection and tournament length selection.
-- Quick play and tournament flow.
-- Tournament mode can randomly choose from all eight games; round scores feed into tournament points and the final winner screen.
-- Browser JavaScript has been syntax-checked and interaction-tested, including line clears, 40 consecutive smart puzzle placements, game-screen rendering, directional input for Memory Grid/Target Rush, and race collision/clean-pass scoring. This is a test harness, not a replacement for real browser/device QA; the native Godot source still needs import/runtime testing in Godot.
-- Local settings; core gameplay does not need internet access.
-- Original vector/code-drawn visuals with an arcade color pass, motion effects, responsive joystick controls, and Web Audio synthesized effects for menu actions, placements, line clears, reactions, boosts, gems, collisions, and round results.
+The browser library supports title/description search, category filters, sorting, favorites, recently played games, a sound toggle, and per-game high scores. Settings save in browser local storage and include light/dark appearance, three background themes, accent color, game difficulty, sound effects, and reduced-motion mode.
 
-## Important status
-This is a development prototype, not a store-ready release. Recent gameplay/UI improvements have been committed to GitHub. The updated Godot project still needs import/runtime verification in the Godot editor and playtesting on devices. Test import and gameplay in the editor and on physical devices before relying on it.
+The global joystick is deliberately **not** used across every game. In this collection, sticks are shown only for Mini Racers and Orb Dash. Puzzle games use board interactions; memory/color games use color buttons; timing and survival games use action buttons.
 
-Not integrated yet: live ads, Google Play Billing/VIP purchase, custom recorded music/voice and a production audio mix, final signed Android App Bundle, Play Console release setup, native Godot parity for the newest browser changes, and complete device QA.
+## Art and licensing
 
-## Controls
-- Desktop: use mouse clicks or the on-screen direction sticks; touch: drag a stick in the direction you want.
-- Tap Sprint, Reflex Rush, and Dodge Arena trigger their action from the player panel/joystick.
-- Memory Grid and Target Rush accept either the color buttons or a joystick direction (up/right/down/left maps to one of the four colors).
-- Mini Racers: push up to accelerate, steer diagonally left/right to dodge cones, and tap **NITRO BOOST** for a burst.
-- Block Battle: select a shape and click/tap an empty board cell, or drag the shape. **↻ ROTATE** turns the selected piece, **SMART MOVE** selects a high-value legal placement, **PLACE PIECE** uses the highlighted spot, and the joystick moves the cursor (release to place). Full rows and columns clear for bonuses.
-- Orb Dash: continuously steer toward gold gems; each gem is worth 10 points.
-- Use the top sound toggle for synthesized sound effects. Press Escape to return from a game to the game menu.
+The browser library uses **Kenney CC0 game sprites** for racing cars, glossy puzzle tiles, stars, and a crate. Assets are referenced from Kenney's public raw asset repository rather than presented as commercial-game screenshots. Sources include [Kenney Racing Pack](https://kenney.nl/assets/racing-pack) and [Kenney CC0 game assets repository](https://github.com/shorepine/kenney). These images load from external URLs, so the website's first-time artwork load requires an internet connection even though mini-game rules run in the browser.
 
-## Team workflow
-This repository is the source of truth for project edits. Keep the main branch runnable and commit after verified changes. Ads/billing should be added only after the core game has been runtime-tested.
+The game implementations and Pocket Party presentation are original; the reference *1 2 3 4 Player Games – Offline* app is an inspiration for local-multiplayer variety, not a source of copied code, branding, or artwork.
 
-## Reference links
-- [Reference game on Google Play](https://play.google.com/store/apps/details?id=com.JindoBlu.FourPlayers)
-- [Godot Web Editor instructions](https://docs.godotengine.org/en/latest/tutorials/editor/using_the_web_editor.html)
-- [Godot AdMob plugin](https://github.com/poingstudios/godot-admob-plugin)
-- [Godot Google Play Billing plugin](https://github.com/godot-sdk-integrations/godot-google-play-billing)
+## Validation completed
+
+The latest browser JavaScript passed a syntax parse check. A deterministic JavaScript/DOM test harness checked all 12 game screens, confirmed joystick controls appear only for Mini Racers and Orb Dash, verified settings can open and persist dark appearance, and tested:
+- Block Battle simultaneous row/column clearing and scoring, plus 30 consecutive legal Smart Move placements.
+- Tic-Tac-Toe and Connect Four win detection and results screens.
+- Solo AI replies for Tic-Tac-Toe and Connect Four.
+- Star Snatch success scoring and Stack Tower drop scoring.
+- Traffic spawning, 5-second difficulty escalation, road movement, and crash penalty.
+- Saved high scores for a completed board-game round.
+
+These tests use a mocked browser environment. They do **not** replace manual desktop/mobile browser QA, cross-browser checks, keyboard/touch device tests, or a production browser-console audit. Keep unverified cases marked as needing QA rather than treating the test harness as a guarantee of zero bugs.
+
+## Native Godot project — separate status
+
+Open project.godot with the Godot 4 editor. The native scene is main.tscn and its UI/game code is scripts/main.gd. The newest browser games, website settings, traffic racer, favorites/search features, and sprite-driven website cards **still need to be ported or matched in Godot** and validated inside the editor/on devices.
+
+For store release, still set the final package/app ID, export presets and signing, store metadata/privacy details, launcher assets, and device QA. Follow the official [Godot Android export guide](https://docs.godotengine.org/en/stable/tutorials/export/exporting_for_android.html) and [iOS export guide](https://docs.godotengine.org/en/latest/tutorials/export/exporting_for_ios.html).
+
+## Controls summary
+
+- Use the player panel buttons for tapping, reaction, dodge and star-timing games.
+- Use the four color buttons for Memory Grid and Target Rush.
+- Mini Racers: hold the stick upward to accelerate and steer left/right around traffic; use Nitro for a burst. Desktop keyboard: A/D or left/right to steer, W/up to accelerate, Space/Shift for Nitro.
+- Orb Dash: steer continuously toward the gold collectible.
+- Block Battle: choose a shape then tap a valid grid cell or drag it to the board; rotate, use Smart Move, or place the highlighted position. A full row or column clears, and simultaneous clears are scored.
+- Tic-Tac-Toe / Connect Four: tap the board or a Connect Four column; the game ends on a win or draw.
+- Use the settings gear for saved preferences and the sound toggle to mute/unmute synthesized effects. Use GAMES to leave a round, or the results screen to rematch.
+
+## Important limitations
+
+This remains a development project, not a store-ready release. The browser version is deployed separately from the native Godot app. Browser changes should not be represented as native Godot changes until they are ported and runtime-tested. Full manual desktop/mobile testing and a browser-console audit are still recommended before calling the entire platform release-ready.
