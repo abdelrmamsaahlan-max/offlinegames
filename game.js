@@ -549,10 +549,13 @@
         const now = performance.now();
         if (owner.lastDir !== direction || now - owner.lastStepAt > 170) {
           const cursor = p.blockCursor || { row: 3, col: 3 };
+          const piece = player.blockPieces[game.selectedPiece];
+          const width = piece ? Math.max.apply(null, piece.cells.map(function (c) { return c[0]; })) + 1 : 1;
+          const height = piece ? Math.max.apply(null, piece.cells.map(function (c) { return c[1]; })) + 1 : 1;
           if (direction === 0) cursor.col = Math.max(0, cursor.col - 1);
-          else if (direction === 2) cursor.col = Math.min(7, cursor.col + 1);
+          else if (direction === 2) cursor.col = Math.min(8 - width, cursor.col + 1);
           else if (direction === 1) cursor.row = Math.max(0, cursor.row - 1);
-          else cursor.row = Math.min(7, cursor.row + 1);
+          else cursor.row = Math.min(8 - height, cursor.row + 1);
           p.blockCursor = cursor;
           owner.lastDir = direction;
           owner.lastStepAt = now;
