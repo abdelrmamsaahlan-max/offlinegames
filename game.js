@@ -324,21 +324,45 @@
     for (let i = 0; i < turns; i++) piece.cells = normalizeBlockCells(piece.cells.map(function (c) { return [-c[1], c[0]]; }));
     piece.rotation = ((piece.rotation || 0) + turns) % 4;
   }
+  function findPlacementForCurrentOrientation(player, piece) {
+    if (!piece || piece.used) return null;
+    const cursor = player.blockCursor || { row: 3, col: 3 };
+    let best = null;
+    for (let row = 0; row < 8; row++) for (let col = 0; col < 8; col++) {
+      if (!blockPieceFits(player.board, piece, col, row)) continue;
+      const board = player.board.slice();
+      piece.cells.forEach(function (cell) { board[(row + cell[1]) * 8 + col + cell[0]] = piece.colorIndex; });
+      let lineCount = 0;
+      for (let y = 0; y < 8; y++) if (board.slice(y * 8, y * 8 + 8).every(function (v) { return v !== null; })) lineCount++;
+      for (let x = 0; x < 8; x++) {
+        let full = true;
+        for (let y = 0; y < 8; y++) if (board[y * 8 + x] === null) full = false;
+        if (full) lineCount++;
+      }
+      const distance = Math.abs(row - cursor.row) + Math.abs(col - cursor.col);
+      const score = lineCount * 100 - distance + piece.cells.length * 0.1;
+      if (!best || score > best.score) best = { row: row, col: col, score: score };
+    }
+    return best;
+  }
   function rotateSelectedBlock() {
     if (!game || game.id !== "block_battle" || currentScreen !== "game") return;
     const player = game.players[game.activePuzzlePlayer];
     const piece = player.blockPieces[game.selectedPiece];
     if (!piece || piece.used) return;
     orientBlockPiece(piece, 1);
-    const move = findBestBlockMove(player, game.selectedPiece);
-    if (move) {
-      orientBlockPiece(piece, move.rotation);
-      player.blockCursor = { row: move.row, col: move.col };
+    const placement = findPlacementForCurrentOrientation(player, piece);
+    if (placement) {
+      player.blockCursor = { row: placement.row, col: placement.col };
+      player.status = "ROTATED · READY TO PLACE";
+    } else {
+      player.status = "NO FIT IN THIS ROTATION";
+      toast("No legal placement in that rotation. Rotate again or use Smart Move.");
     }
     sfx("rotate");
     renderGame();
   }
-  function suggestBlockMove() {
+    function suggestBlockMove() {
     if (!game || game.id !== "block_battle" || currentScreen !== "game") return;
     const player = game.players[game.activePuzzlePlayer];
     const move = findBestBlockMove(player);
@@ -425,20 +449,23 @@
     }
     if (player.blockPieces.every(function (p) { return p.used; })) {
       player.blockPieces = makeBlockPieces(player.board);
-      game.selectedPiece = firstUsableBlockPiece(player);
-    } else {
-      game.selectedPiece = firstUsableBlockPiece(player);
     }
-    if (!blockPlayerHasMove(player)) {
+    let nextMove = findBestBlockMove(player);
+    if (!nextMove) {
       player.blockPieces = makeBlockPieces(player.board);
-      game.selectedPiece = firstUsableBlockPiece(player);
-      if (!blockPlayerHasMove(player)) {
-        player.status = "BOARD FULL — TURN OVER";
-        game.timeLeft = 0.01;
-        renderGame();
-        return;
-      }
-      player.status = "NEW SHAPES — KEEP GOING!";
+      nextMove = findBestBlockMove(player);
+    }
+    if (nextMove) {
+      game.selectedPiece = nextMove.pieceIndex;
+      const nextPiece = player.blockPieces[nextMove.pieceIndex];
+      if (nextPiece) orientBlockPiece(nextPiece, nextMove.rotation);
+      player.blockCursor = { row: nextMove.row, col: nextMove.col };
+    } else {
+      game.selectedPiece = -1;
+      player.status = "BOARD FULL — TURN OVER";
+      game.timeLeft = 0.01;
+      renderGame();
+      return;
     }
     renderGame();
   }
