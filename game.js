@@ -195,6 +195,31 @@
     return '<div class="real-art real-art-' + id + '" aria-label="' + escapeText(gameById(id).title) + ' artwork">' + images + '</div>';
   }
 
+  function closeSettingsModal() {
+    const modal = root.querySelector(".settings-modal");
+    if (modal) modal.remove();
+  }
+  function renderSettingsModal() {
+    closeSettingsModal();
+    const themeLabels = { nebula: "NEBULA", ocean: "OCEAN", sunset: "SUNSET" };
+    const difficultyLabels = { chill: "CHILL", normal: "NORMAL", chaos: "CHAOS" };
+    root.insertAdjacentHTML("beforeend",
+      '<div class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">' +
+        '<div class="settings-dialog">' +
+          '<div class="settings-modal-head"><div><span class="eyebrow">POCKET PARTY</span><h2 id="settings-title">Arcade settings</h2><p>Your preferences save on this device.</p></div><button class="settings-close" data-action="settings-close" aria-label="Close settings">×</button></div>' +
+          '<section class="setting-section"><h3>COLOR THEME</h3><div class="setting-options">' +
+            Object.keys(themeLabels).map(function (theme) { return '<button class="setting-choice ' + (settings.theme === theme ? "selected" : "") + '" data-action="setting-theme" data-value="' + theme + '"><span class="theme-swatch theme-' + theme + '"></span>' + themeLabels[theme] + '</button>'; }).join("") +
+          '</div></section>' +
+          '<section class="setting-section"><h3>GAME DIFFICULTY</h3><p>Affects traffic pace and timing challenge.</p><div class="setting-options">' +
+            Object.keys(difficultyLabels).map(function (level) { return '<button class="setting-choice ' + (settings.difficulty === level ? "selected" : "") + '" data-action="setting-difficulty" data-value="' + level + '">' + difficultyLabels[level] + '</button>'; }).join("") +
+          '</div></section>' +
+          '<section class="setting-section setting-row"><div><strong>Sound effects</strong><small>Arcade clicks, clears, boosts, and collisions</small></div><button class="setting-toggle ' + (settings.sound ? "enabled" : "") + '" data-action="setting-sound" aria-pressed="' + settings.sound + '">' + (settings.sound ? "ON" : "OFF") + '</button></section>' +
+          '<section class="setting-section setting-row"><div><strong>Motion effects</strong><small>Animations and screen transitions</small></div><button class="setting-toggle ' + (settings.motion ? "enabled" : "") + '" data-action="setting-motion" aria-pressed="' + settings.motion + '">' + (settings.motion ? "ON" : "OFF") + '</button></section>' +
+          '<div class="settings-modal-footer"><button class="secondary-button" data-action="settings-reset">RESET SETTINGS</button><button class="primary-button" data-action="settings-close">DONE ✓</button></div>' +
+          '<p class="asset-credit">Artwork uses Kenney CC0 game assets. <a href="https://kenney.nl/assets/racing-pack" target="_blank" rel="noreferrer">Asset source</a></p>' +
+        '</div></div>');
+  }
+
   function renderHome() {
     currentScreen = "home";
     root.innerHTML = '<div class="shell">' +
@@ -1288,7 +1313,13 @@
     }
   }
   function handleAction(action, el) {
-    if (action === "players") { settings.players = Number(el.dataset.value); saveSettings(); sfx("select"); renderHome(); }
+    if (action === "settings-close") closeSettingsModal();
+    else if (action === "setting-theme") { settings.theme = el.dataset.value; saveSettings(); renderSettingsModal(); }
+    else if (action === "setting-difficulty") { settings.difficulty = el.dataset.value; saveSettings(); renderSettingsModal(); }
+    else if (action === "setting-sound") { settings.sound = !settings.sound; saveSettings(); renderSettingsModal(); }
+    else if (action === "setting-motion") { settings.motion = !settings.motion; saveSettings(); renderSettingsModal(); }
+    else if (action === "settings-reset") { settings.theme = "nebula"; settings.difficulty = "normal"; settings.motion = true; settings.sound = true; saveSettings(); renderSettingsModal(); }
+    else if (action === "players") { settings.players = Number(el.dataset.value); saveSettings(); sfx("select"); renderHome(); }
     else if (action === "rounds") { settings.rounds = Number(el.dataset.value); saveSettings(); renderHome(); }
     else if (action === "play") renderGameSelect();
     else if (action === "block-piece") {
@@ -1432,6 +1463,10 @@
     if (["play","home","quick-play","start-tournament","game-menu","players","rounds","next-round","final","rematch"].indexOf(action) >= 0) sfx("ui");
     handleAction(action, button);
   });
+  document.getElementById("settings-toggle").addEventListener("click", function () {
+    renderSettingsModal();
+    sfx("ui");
+  });
   document.getElementById("sound-toggle").addEventListener("click", function () {
     settings.sound = !settings.sound;
     saveSettings();
@@ -1447,5 +1482,6 @@
       tickTimer = window.setInterval(tick, 80);
     }
   });
+  applySettings();
   renderHome();
 })();
