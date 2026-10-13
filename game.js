@@ -267,9 +267,9 @@
   }
 
   function categoryGroup(g) {
-    if (g.id === "mini_racers") return ["RACING"];
-    if (["block_battle","memory_grid","tic_tac_toe","connect_four"].includes(g.id)) return ["PUZZLE"];
-    if (["tic_tac_toe","connect_four"].includes(g.id)) return ["CLASSICS"];
+    if (g.id === "mini_racers") return ["RACING","ARCADE"];
+    if (["tic_tac_toe","connect_four"].includes(g.id)) return ["PUZZLE","CLASSICS"];
+    if (["block_battle","memory_grid"].includes(g.id)) return ["PUZZLE","ARCADE"];
     return ["PARTY","ARCADE"];
   }
   function saveLibraryState() {
@@ -1831,6 +1831,47 @@
     if (action === "player" || action === "color" || action === "joystick" || action === "block-place" || action === "block-piece") event.preventDefault();
     if (["play","home","quick-play","start-tournament","game-menu","players","rounds","next-round","final","rematch"].indexOf(action) >= 0) sfx("ui");
     handleAction(action, button);
+  });
+  root.addEventListener("input", function (event) {
+    if (!event.target || event.target.id !== "library-search") return;
+    libraryQuery = event.target.value || "";
+    const cursor = libraryQuery.length;
+    renderGameSelect();
+    const next = root.querySelector("#library-search");
+    if (next) {
+      next.focus();
+      try { next.setSelectionRange(cursor, cursor); } catch (e) {}
+    }
+  });
+  root.addEventListener("change", function (event) {
+    if (event.target && event.target.id === "library-sort") {
+      librarySort = event.target.value;
+      renderGameSelect();
+    }
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape") {
+      closeSettingsModal();
+      if (game && currentScreen === "game" && !game.isPaused) {
+        // Escape is a safe way out; the menu action clears the live tick loop.
+      }
+    }
+    if (!game || currentScreen !== "game" || game.id !== "mini_racers") return;
+    const key = event.key.toLowerCase();
+    game.players.forEach(function (p, i) {
+      if ((key === "arrowleft" || key === "a") && i === 0) p.raceSteer = -1;
+      if ((key === "arrowright" || key === "d") && i === 0) p.raceSteer = 1;
+      if ((key === "arrowup" || key === "w") && i === 0) p.joystickY = -1;
+    });
+    if (["arrowleft","arrowright","arrowup","a","d","w"].includes(key)) { updateRaceTrack(); event.preventDefault(); }
+    if ((key === " " || key === "shift") && iAmRacing()) playerAction(0);
+  });
+  document.addEventListener("keyup", function (event) {
+    if (!game || currentScreen !== "game" || game.id !== "mini_racers") return;
+    const key = event.key.toLowerCase();
+    if (["arrowleft","arrowright","a","d"].includes(key)) game.players[0].raceSteer = 0;
+    if (["arrowup","w"].includes(key)) game.players[0].joystickY = 0;
+    updateRaceTrack();
   });
   document.getElementById("settings-toggle").addEventListener("click", function () {
     renderSettingsModal();
