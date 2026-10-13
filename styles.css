@@ -862,3 +862,12 @@ button{-webkit-user-select:none;user-select:none}
   .pause-overlay{animation:none}
   .game-pause-button{transition:none}
 }
+
+
+/* Status colors keep network state clear without relying on text alone. */
+.offline-pill{transition:background .2s,border-color .2s,color .2s}
+.offline-pill i{transition:background .2s,box-shadow .2s}
+.offline-pill.is-setup{background:color-mix(in srgb,#f5b94c 10%,var(--surface));border-color:color-mix(in srgb,#e3a32b 35%,var(--surface-edge));color:var(--ink)}
+.offline-pill.is-setup i{background:#e7a52d;box-shadow:0 0 0 4px rgba(231,165,45,.14)}
+.offline-pill.is-offline{background:color-mix(in srgb,#f06a78 11%,var(--surface));border-color:color-mix(in srgb,#f06a78 37%,var(--surface-edge));color:var(--ink)}
+.offline-pill.is-offline i{background:#f06a78;box-shadow:0 0 0 4px rgba(240,106,120,.14)}
