@@ -709,7 +709,7 @@
     const g = gameById(id);
     const durations = { tap_sprint: 10, mini_racers: 30, target_rush: 12, block_battle: 35, orb_dash: 30, star_snatch: 15, stack_tower: 8 };
     const duration = durations[id] || 0;
-    const effectivePlayers = (id === "tic_tac_toe" || id === "connect_four") ? (settings.players === 1 ? 1 : 2) : settings.players;
+    const effectivePlayers = (id === "tic_tac_toe" || id === "connect_four") ? 2 : settings.players;
     game = {
       id: id, data: g, tournament: inTournament, round: tournament ? tournament.round : 1,
       players: Array.from({ length: effectivePlayers }, newPlayer),
@@ -721,7 +721,8 @@
       raceTimeElapsed: 0, raceDifficulty: 0, roadScroll: 0, activeStackPlayer: 0,
       stackX: 35, stackDirection: 1, stackSpeed: 235, starX: 12, starDirection: 1, starSpeed: 78, nextTrafficId: 1,
       tttBoard: Array(9).fill(null), tttTurn: 0, tttOver: false, tttWinner: null,
-      connectBoard: Array(42).fill(null), connectTurn: 0, connectOver: false, connectWinner: null
+      connectBoard: Array(42).fill(null), connectTurn: 0, connectOver: false, connectWinner: null,
+      aiOpponent: settings.players === 1
     };
     game.players.forEach(function (p, i) {
       p.blockPieces = makeBlockPieces(p.board);
