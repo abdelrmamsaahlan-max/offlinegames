@@ -582,7 +582,7 @@
       p.orbY = i < 2 ? 24 : 76;
     });
     if (id === "block_battle") {
-      game.players.forEach(function (p) {
+      game.players.forEach(function (p, i) {
         const opening = findBestBlockMove(p);
         if (opening) {
           const piece = p.blockPieces[opening.pieceIndex];
