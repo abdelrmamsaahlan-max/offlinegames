@@ -249,8 +249,8 @@
           '<div class="hero-spark"><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 2L60 37L96 50L60 62L50 98L39 62L4 50L39 37Z" fill="#ffe16b"/><circle cx="79" cy="18" r="7" fill="#ff7188"/><circle cx="20" cy="76" r="5" fill="#5ed0ed"/></svg></div>' +
           '<span class="eyebrow"><span class="star">✦</span> THE LIVING ROOM ARCADE</span>' +
           '<h1>One phone.<br><span>Four players.</span><br>Big chaos.</h1>' +
-          '<p>Pick your players, choose your challenge, and fight for the crown. Ten mini-games, real-time action, and zero Wi-Fi required.</p>' +
-          '<div class="hero-bottom"><div class="hero-stat"><strong>10</strong><small>Mini games</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>1–4</strong><small>Players</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>0</strong><small>Wi-Fi required</small></div></div>' +
+          '<p>Pick your players, choose your challenge, and fight for the crown. Twelve mini-games, real-time action, and zero Wi-Fi required.</p>' +
+          '<div class="hero-bottom"><div class="hero-stat"><strong>12</strong><small>Mini games</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>1–4</strong><small>Players</small></div><div class="hero-separator"></div><div class="hero-stat"><strong>0</strong><small>Wi-Fi required</small></div></div>' +
         '</div>' +
         '<div class="settings-card">' +
           '<div class="section-heading"><div><h2>Build your party</h2><p>Pass one device around or crowd around the screen.</p></div><span class="step-mark">STEP 01 / 02</span></div>' +
@@ -1659,7 +1659,7 @@
             (game.id === "stack_tower" ? '<button class="action-button stack-drop-button" data-action="player" data-player="' + i + '" ' + (activeStack ? "" : "disabled") + '>' + (activeStack ? "DROP BLOCK" : "WAIT TURN") + '</button>' :
               '<button class="action-button ' + (i === 2 ? "soft-text" : "") + '" data-action="player" data-player="' + i + '">' + (game.id === "tap_sprint" ? "TAP FAST!" : game.id === "dodge_arena" ? "DODGE NOW!" : game.id === "star_snatch" ? "SNATCH STAR!" : "TAP ON GO!") + '</button>')))))) +
         '</section>';
-      }).join("") + '</div><div class="game-tip">' + (game.id === "memory_grid" ? "Pass the phone: each player gets a turn to repeat the sequence." : (game.id === "mini_racers" ? "Push UP to accelerate, steer left or right around cones, and tap NITRO BOOST for a burst. First across the finish line wins!" : (game.id === "block_battle" ? "Take turns with your own puzzle board. Clear complete rows and columns to earn bonus points." : (game.id === "orb_dash" ? "Drag your player joystick to move in any direction. Collect ✦ gems for 10 points each." : (game.id === "star_snatch" ? "Tap SNATCH STAR when the moving star enters the gold target zone." : (game.id === "stack_tower" ? "Take turns dropping moving blocks. Precise overlaps build a taller tower." : ((game.id === "tic_tac_toe" || game.id === "connect_four") ? "Tap the board to make your move. " + (game.aiOpponent ? "Try to outsmart the bot." : "Pass the device after each turn.") : "Everybody plays on one screen. Tap only your own player panel."))))))) + '</div></div></div>';
+      }).join("") + '</div><div class="game-tip">' + (game.id === "memory_grid" ? "Pass the phone: each player gets a turn to repeat the sequence." : (game.id === "mini_racers" ? "Push UP to accelerate, steer left or right between traffic cars, and tap NITRO BOOST for a burst. Traffic gets denser every five seconds; avoid collisions to keep your speed." : (game.id === "block_battle" ? "Take turns with your own puzzle board. Clear complete rows and columns to earn bonus points." : (game.id === "orb_dash" ? "Drag your player joystick to move in any direction. Collect ✦ gems for 10 points each." : (game.id === "star_snatch" ? "Tap SNATCH STAR when the moving star enters the gold target zone." : (game.id === "stack_tower" ? "Take turns dropping moving blocks. Precise overlaps build a taller tower." : ((game.id === "tic_tac_toe" || game.id === "connect_four") ? "Tap the board to make your move. " + (game.aiOpponent ? "Try to outsmart the bot." : "Pass the device after each turn.") : "Everybody plays on one screen. Tap only your own player panel."))))))) + '</div></div></div>';
     if (game.id === "reflex_rush" && game.phase === "reflex_go") {
       game.startedGoAt = performance.now();
     }
@@ -1918,7 +1918,7 @@
       stopTick();
     } else if (!document.hidden && game && currentScreen === "game" && !tickTimer) {
       lastTick = performance.now();
-      tickTimer = window.setInterval(tick, 80);
+      tickTimer = window.setInterval(tick, 33);
     }
   });
   applySettings();
