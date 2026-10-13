@@ -636,7 +636,7 @@
         const now = performance.now();
         if (owner.lastDir !== direction || now - owner.lastStepAt > 170) {
           const cursor = p.blockCursor || { row: 3, col: 3 };
-          const piece = player.blockPieces[game.selectedPiece];
+          const piece = p.blockPieces[game.selectedPiece];
           const width = piece ? Math.max.apply(null, piece.cells.map(function (c) { return c[0]; })) + 1 : 1;
           const height = piece ? Math.max.apply(null, piece.cells.map(function (c) { return c[1]; })) + 1 : 1;
           if (direction === 0) cursor.col = Math.max(0, cursor.col - 1);
@@ -1350,7 +1350,7 @@
         const tileIndex = value !== null ? value : (ghostCells.has(index) && activePiece ? activePiece.colorIndex : -1);
         const ghostColor = tileIndex >= 0 ? colors[tileIndex] : "";
         const bgStyle = tileIndex >= 0 ? ' style="--block-color:' + ghostColor + ';--block-sprite:url(' + puzzleAsset(tileTextures[tileIndex]) + ')"' : "";
-        const bgStyle = ghostColor ? ' style="--block-color:' + ghostColor + '"' : "";
+
         return '<button class="' + classes.join(" ") + '"' + bgStyle + ' data-action="block-place" data-row="' + row + '" data-col="' + col + '" aria-label="Row ' + (row + 1) + ', column ' + (col + 1) + '"></button>';
       }).join("");
       player.lastPlaced = [];
