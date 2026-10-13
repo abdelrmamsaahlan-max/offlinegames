@@ -1204,40 +1204,43 @@
       if (game.id === "tap_sprint") return p.taps + p.comboBonus;
       if (game.id === "reflex_rush") return p.reaction === null ? -2000 : (p.reaction < 0 ? -1000 : 10000 - p.reaction);
       if (game.id === "memory_grid") return p.memoryScore;
-      if (game.id === "mini_racers") return p.progress;
+      if (game.id === "mini_racers") return Math.max(0, Math.round(p.progress) + p.cleanPasses * 48 - p.misses * 34);
       if (game.id === "dodge_arena") return p.hits * 2 - p.misses;
       if (game.id === "target_rush") return p.hits * 2 - p.misses;
       if (game.id === "block_battle") return p.blockScore;
       if (game.id === "orb_dash") return p.hits * 10;
+      if (game.id === "star_snatch") return p.hits * 10 - p.misses * 3;
+      if (game.id === "stack_tower") return p.stackScore + p.stackHeight * 10;
       return 0;
     });
   }
-  function rankPlayers(scores) {
-    return scores.map(function (score, i) { return { index: i, score: score }; }).sort(function (a, b) {
-      if (b.score !== a.score) return b.score - a.score;
-      return a.index - b.index;
-    });
-  }
+
   function scoreText(p, id) {
     if (id === "tap_sprint") return p.taps + " taps · " + p.comboBonus + " combo bonus";
     if (id === "reflex_rush") return p.reaction === null ? "Too slow" : (p.reaction < 0 ? "False start" : p.reaction + " ms");
     if (id === "memory_grid") return p.memoryScore + " / " + (game ? game.sequence.length : 5) + " remembered";
-    if (id === "mini_racers") return Math.round(p.progress) + " m raced · " + p.boosts + " boosts";
+    if (id === "mini_racers") return Math.round(p.progress) + " m · " + p.cleanPasses + " clean passes · " + p.misses + " collisions";
     if (id === "block_battle") return p.blockScore + " points · " + p.blockLines + " lines cleared";
     if (id === "orb_dash") return p.hits * 10 + " gem points";
+    if (id === "star_snatch") return p.hits + " stars caught · " + p.misses + " mistimed taps";
+    if (id === "stack_tower") return p.stackHeight + " layers · " + p.stackScore + " stack points";
     if (id === "dodge_arena") return p.hits + " dodges · " + p.misses + " missed";
     return p.hits + " hits · " + p.misses + " misses";
   }
+
   function miniScore(p, id) {
     if (id === "tap_sprint") return p.taps + " taps · " + p.comboBonus + " bonus";
-    if (id === "mini_racers") return Math.round(p.raceSpeed) + " speed · " + Math.round(p.progress) + " m";
+    if (id === "mini_racers") return Math.round(p.progress) + " m · " + p.cleanPasses + " passes · " + p.misses + " crashes";
     if (id === "block_battle") return p.blockScore + " points · " + p.blockLines + " lines";
     if (id === "orb_dash") return p.hits * 10 + " points";
+    if (id === "star_snatch") return p.hits + " stars · " + p.misses + " misses";
+    if (id === "stack_tower") return p.stackHeight + " layers · " + p.stackScore + " pts";
     if (id === "reflex_rush") return p.reaction !== null && p.reaction >= 0 ? p.reaction + " ms" : p.status;
     if (id === "memory_grid") return p.memoryScore + " matched";
     if (id === "dodge_arena") return p.hits + " dodges";
     return p.hits + " hits";
   }
+
   function finishRound() {
     if (!game || currentScreen !== "game") return;
     stopTick();
