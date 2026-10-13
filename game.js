@@ -2060,6 +2060,7 @@
       ? "You are offline. Cached games and artwork remain available."
       : (controlled ? "The game shell and previously cached artwork are available offline." : "Visit online once to prepare the offline cache.");
     pill.classList.toggle("is-offline", !navigator.onLine);
+    pill.classList.toggle("is-setup", navigator.onLine && !controlled);
   }
 
   if ("serviceWorker" in navigator && window.isSecureContext) {
