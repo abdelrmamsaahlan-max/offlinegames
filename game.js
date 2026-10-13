@@ -70,18 +70,45 @@
     if (!settings.sound) return;
     try {
       audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
+      if (audioContext.state === "suspended") audioContext.resume();
+      const now = audioContext.currentTime;
+      const duration = Math.max(0.025, length || 0.08);
       const oscillator = audioContext.createOscillator();
       const gain = audioContext.createGain();
       oscillator.type = wave || "sine";
-      oscillator.frequency.value = freq || 440;
-      gain.gain.value = 0.045;
+      oscillator.frequency.setValueAtTime(Math.max(60, freq || 440), now);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.linearRampToValueAtTime(0.035, now + Math.min(0.012, duration * 0.22));
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       oscillator.connect(gain);
       gain.connect(audioContext.destination);
-      oscillator.start();
-      gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + (length || 0.09));
-      oscillator.stop(audioContext.currentTime + (length || 0.09));
+      oscillator.start(now);
+      oscillator.stop(now + duration + 0.015);
     } catch (e) {}
   }
+  function sfx(name, accent) {
+    if (!settings.sound) return;
+    const tunes = {
+      ui: [[540,0.035,"triangle",0]],
+      select: [[430,0.045,"sine",0],[650,0.055,"triangle",28]],
+      tap: [[360 + (accent || 0),0.032,"triangle",0]],
+      stick: [[280,0.025,"sine",0]],
+      place: [[310,0.045,"triangle",0],[470,0.045,"sine",24]],
+      clear: [[540,0.07,"triangle",0],[760,0.09,"sine",42]],
+      combo: [[480,0.07,"triangle",0],[690,0.08,"triangle",38],[920,0.12,"sine",78]],
+      rotate: [[260,0.05,"triangle",0],[390,0.055,"sine",35]],
+      hint: [[480,0.045,"sine",0],[620,0.055,"sine",40],[790,0.08,"triangle",80]],
+      error: [[170,0.075,"sawtooth",0]],
+      boost: [[170,0.065,"sawtooth",0],[260,0.07,"sawtooth",38],[720,0.08,"triangle",72]],
+      bump: [[125,0.11,"sawtooth",0],[90,0.08,"square",35]],
+      gem: [[720,0.05,"sine",0],[980,0.08,"triangle",45]],
+      win: [[520,0.08,"triangle",0],[700,0.1,"triangle",70],[920,0.15,"sine",145]]
+    };
+    (tunes[name] || tunes.ui).forEach(function (note) {
+      window.setTimeout(function () { beep(note[0] + (accent || 0), note[1], note[2]); }, note[3]);
+    });
+  }
+
   function art(id) {
     const commonStart = '<svg viewBox="0 0 320 150" role="img" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">';
     let shapes = "";
@@ -918,21 +945,38 @@
         cars + '</svg></div>';
     } else if (id === "block_battle") {
       const player = game.players[game.activePuzzlePlayer];
+      const cursor = player.blockCursor || { row: 3, col: 3 };
+      const activePiece = player.blockPieces[game.selectedPiece];
+      const ghostCells = new Set();
+      const ghostFits = !!activePiece && !activePiece.used && blockPieceFits(player.board, activePiece, cursor.col, cursor.row);
+      if (activePiece && !activePiece.used) activePiece.cells.forEach(function (cell) {
+        const x = cursor.col + cell[0], y = cursor.row + cell[1];
+        if (x >= 0 && x < 8 && y >= 0 && y < 8) ghostCells.add(y * 8 + x);
+      });
+      const placed = new Set(player.lastPlaced || []);
+      const cleared = new Set(player.lastCleared || []);
       const boardCells = player.board.map(function (value, index) {
         const row = Math.floor(index / 8), col = index % 8;
-        const filled = value === null ? "" : " filled";
+        const classes = ["block-cell"];
+        if (value !== null) classes.push("filled");
+        if (ghostCells.has(index)) classes.push(ghostFits ? "ghost-valid" : "ghost-invalid");
+        if (cursor.row === row && cursor.col === col) classes.push("cursor-anchor");
+        if (placed.has(index) && value !== null) classes.push("place-pop");
+        if (cleared.has(index) && value === null) classes.push("line-flash");
         const bgStyle = value === null ? "" : ' style="--block-color:' + colors[value] + '"';
-        return '<button class="block-cell' + filled + '"' + bgStyle + ' data-action="block-place" data-row="' + row + '" data-col="' + col + '" aria-label="Row ' + (row + 1) + ', column ' + (col + 1) + '"></button>';
+        return '<button class="' + classes.join(" ") + '"' + bgStyle + ' data-action="block-place" data-row="' + row + '" data-col="' + col + '" aria-label="Row ' + (row + 1) + ', column ' + (col + 1) + '"></button>';
       }).join("");
+      player.lastPlaced = [];
+      player.lastCleared = [];
       const tray = player.blockPieces.map(function (piece, index) {
         const maxX = Math.max.apply(null, piece.cells.map(function (c) { return c[0]; })) + 1;
         const maxY = Math.max.apply(null, piece.cells.map(function (c) { return c[1]; })) + 1;
         const spans = piece.cells.map(function (cell) {
           return '<span style="grid-column:' + (cell[0] + 1) + ';grid-row:' + (cell[1] + 1) + ';--block-color:' + colors[piece.colorIndex] + '"></span>';
         }).join("");
-        return '<button class="block-piece-button' + (piece.used ? " used" : (game.selectedPiece === index ? " chosen" : "")) + '" data-action="block-piece" data-piece="' + index + '"' + (piece.used ? " disabled" : "") + '><span class="piece-caption">' + (piece.used ? "PLACED" : (game.selectedPiece === index ? "SELECTED" : "SHAPE " + (index + 1))) + '</span><span class="piece-preview" style="grid-template-columns:repeat(' + maxX + ',20px);grid-template-rows:repeat(' + maxY + ',20px)">' + spans + '</span></button>';
+        return '<button class="block-piece-button' + (piece.used ? " used" : (game.selectedPiece === index ? " chosen" : "")) + '" data-action="block-piece" data-piece="' + index + '"' + (piece.used ? " disabled" : "") + '><span class="piece-caption">' + (piece.used ? "PLACED" : (game.selectedPiece === index ? "SELECTED" : "SHAPE " + (index + 1))) + '</span><span class="piece-preview" style="grid-template-columns:repeat(' + maxX + ',16px);grid-template-rows:repeat(' + maxY + ',16px)">' + spans + '</span></button>';
       }).join("");
-      html = '<div class="block-game-layout"><div class="block-game-intro"><span class="block-kicker">BLOCK BATTLE · PLAYER ' + (game.activePuzzlePlayer + 1) + '</span><strong>Place shapes. Clear lines. Chase the high score.</strong><span>Drag a shape onto the board, or tap a shape and then a spot. Full rows and columns clear together.</span></div><div class="block-game-main"><div class="block-board" role="grid" aria-label="8 by 8 block puzzle board">' + boardCells + '</div><div class="block-piece-tray">' + tray + '</div></div><div class="block-game-footer"><span id="block-score-live">SCORE ' + player.blockScore + '</span><span id="block-lines-live">' + player.blockLines + ' LINES CLEARED</span><span>PASS DEVICE AFTER YOUR TURN</span></div></div>';
+      html = '<div class="block-game-layout"><div class="block-game-intro"><span class="block-kicker">BLOCK BATTLE · PLAYER ' + (game.activePuzzlePlayer + 1) + '</span><strong>Build smart. Rotate freely. Clear big.</strong><span>Every fresh rack has legal options for the current board. Tap any cell to place, or use Smart Move for the strongest placement.</span></div><div class="block-game-main"><div class="block-board" role="grid" aria-label="8 by 8 block puzzle board">' + boardCells + '</div><div class="block-side-panel"><div class="block-piece-tray">' + tray + '</div><div class="block-tools"><button data-action="block-rotate" class="block-tool-button">↻ ROTATE</button><button data-action="block-hint" class="block-tool-button smart">✦ SMART MOVE</button><button data-action="block-place-cursor" class="block-tool-button place">PLACE PIECE</button></div></div></div><div class="block-game-footer"><span id="block-score-live">SCORE ' + player.blockScore + '</span><span id="block-lines-live">' + player.blockLines + ' LINES CLEARED</span><span>STREAK ×' + Math.max(1, player.blockStreak) + '</span><span>PASS DEVICE AFTER YOUR TURN</span></div></div>';
     } else if (id === "orb_dash") {
       const orbs = game.players.map(function (p, i) { return '<span class="orb-player" id="orb-player-' + i + '" style="--orb-color:' + colors[i] + ';left:' + p.orbX + '%;top:' + p.orbY + '%"><span>' + (i + 1) + '</span></span>'; }).join("");
       html = '<div class="orb-dash-layout"><div class="orb-dash-heading"><div><span class="orb-kicker">ORBIT ARENA</span><strong>Grab the gems!</strong><small>Move with your joystick. Every gem is worth 10 points.</small></div><span class="orb-leader" id="orb-leader">P1 LEADS · 0 PTS</span></div><div class="orb-arena-field" id="orb-arena-field"><span class="orb-gem" id="orb-gem" style="left:' + game.orbTarget.x + '%;top:' + game.orbTarget.y + '%">✦</span>' + orbs + '</div><div class="orb-arena-note">Keep moving, collect the gold gem, and beat your friends to the next one.</div></div>';
